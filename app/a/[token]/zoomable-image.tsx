@@ -203,7 +203,8 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
           alt=""
           aria-hidden
           draggable={false}
-          className="absolute inset-0 h-full w-full select-none object-contain"
+          // 아직 받는 중인 걸 알 수 있게 살짝 흐리게
+          className="absolute inset-0 h-full w-full select-none object-contain blur-[1.5px]"
         />
       )}
       <img
@@ -215,6 +216,14 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
         onLoad={() => setLoadedSrc(src)}
         className={`relative h-full w-full select-none object-contain ${waiting ? "opacity-0" : ""}`}
       />
+      {/* 선명한 사진을 받는 중: 오른쪽 위에 작은 로딩 원 */}
+      {waiting && (
+        <span
+          role="status"
+          aria-label="사진 불러오는 중"
+          className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"
+        />
+      )}
     </div>
   );
 }
