@@ -38,5 +38,5 @@ async function AlbumLoader({ token }: { token: string }) {
   if (!data) {
     notFound();
   }
-  return <SelectApp album={data as SharedAlbum} />;
+  return <SelectApp token={token} album={data as SharedAlbum} />;
 }

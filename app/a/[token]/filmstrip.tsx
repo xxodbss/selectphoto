@@ -3,20 +3,43 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { photoUrl } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
+import { StarBar } from "./star-bar";
 import type { SharedPhoto } from "./types";
+import type { RatingsApi, SaveState } from "./use-ratings";
 import { ZoomableImage } from "./zoomable-image";
 
 const PRELOAD = 2; // 지금 사진 앞뒤로 큰 사진을 미리 불러올 장수
+
+const SAVE_LABEL: Record<SaveState, string> = {
+  idle: "",
+  saving: "저장 중…",
+  saved: "저장됨",
+  error: "저장 실패 · 인터넷을 확인해 주세요",
+};
 
 type Props = {
   photos: SharedPhoto[];
   index: number;
   onIndexChange: (index: number) => void;
+  ratings: RatingsApi;
+  fiveStarLimit: number;
 };
 
-export function Filmstrip({ photos, index, onIndexChange }: Props) {
+export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const photo = photos[index];
+
+  function handleRate(stars: number) {
+    if (ratings.rate(photo.id, stars) === "limit") {
+      setNotice(`5점은 최대 ${fiveStarLimit}장까지예요. 다른 사진의 5점을 낮추면 줄 수 있어요.`);
+      clearTimeout(noticeTimer.current);
+      noticeTimer.current = setTimeout(() => setNotice(null), 3000);
+    }
+  }
 
   // 격자에서 넘어왔을 때 고른 사진 위치로 바로 이동
   useLayoutEffect(() => {
@@ -74,9 +97,23 @@ export function Filmstrip({ photos, index, onIndexChange }: Props) {
         })}
       </div>
 
-      <p className="flex-none truncate px-4 py-2 text-center text-xs text-zinc-400">
-        {photos[index].filename}
-      </p>
+      <div className="flex-none pt-2">
+        <StarBar
+          value={ratings.ratings[photo.id] ?? 0}
+          disabled={ratings.locked}
+          onRate={handleRate}
+        />
+        {notice ? (
+          <p role="alert" className="px-4 py-1 text-center text-xs text-amber-400">
+            {notice}
+          </p>
+        ) : (
+          <p className="truncate px-4 py-1 text-center text-xs text-zinc-400">
+            {photo.filename}
+            {SAVE_LABEL[ratings.saveState] && ` · ${SAVE_LABEL[ratings.saveState]}`}
+          </p>
+        )}
+      </div>
 
       <PhotoStrip photos={photos} index={index} onScrub={jumpTo} onSelect={goTo} />
     </>
