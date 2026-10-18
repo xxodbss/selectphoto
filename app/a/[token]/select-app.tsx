@@ -13,30 +13,38 @@ import { setViewMode, useViewMode } from "./view-mode";
 export function SelectApp({ token, album }: { token: string; album: SharedAlbum }) {
   const mode = useViewMode();
   const hydrated = useHydrated();
-  const [chosen, setChosen] = useState<number | null>(null);
+  const [chosenId, setChosenId] = useState<string | null>(null);
   const ratings = useRatings(token, album);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
   const [pinned, setPinned] = useState<number | null>(null); // 비교할 때 위에 고정한 사진
+  // 셀렉을 마친 앨범은 별점을 준 사진만 보여준다 (전체 보기로 바꿀 수 있음)
+  const [onlyRated, setOnlyRated] = useState(Boolean(album.submitted_at));
   const { photos } = album;
+  const shown = onlyRated ? photos.filter((p) => (ratings.ratings[p.id] ?? 0) > 0) : photos;
   const comparing = pinned !== null && mode === "filmstrip";
   const pageScroll = mode === "grid";
 
-  // 처음엔 이 기기에서 마지막에 보던 사진(없거나 지워졌으면 첫 사진), 그 뒤로는 고른 사진
-  const index =
-    chosen ?? (hydrated ? Math.max(0, photos.findIndex((p) => p.id === readLastPhoto(token))) : 0);
+  // 보던 사진: 처음엔 이 기기에서 마지막에 보던 사진, 그 뒤로는 고른 사진 (목록에 없으면 첫 사진)
+  const currentId = chosenId ?? (hydrated ? readLastPhoto(token) : null);
+  const index = Math.max(0, shown.findIndex((p) => p.id === currentId));
 
   // 사진을 넘길 때마다 별점 저장 + 보던 사진 기억
   function changeIndex(i: number) {
-    setChosen(i);
-    saveLastPhoto(token, photos[i].id);
+    setChosenId(shown[i].id);
+    saveLastPhoto(token, shown[i].id);
     ratings.flush();
   }
 
   // 비교 시작: 지금 사진을 위에 고정하고, 아래는 다음 사진(마지막이면 앞 사진)
   function startCompare() {
     setPinned(index);
-    changeIndex(index < photos.length - 1 ? index + 1 : index - 1);
+    changeIndex(index < shown.length - 1 ? index + 1 : index - 1);
+  }
+
+  function toggleOnlyRated() {
+    setPinned(null);
+    setOnlyRated(!onlyRated);
   }
 
   if (photos.length === 0) {
@@ -79,7 +87,13 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           }`}
         >
           <span className="min-w-0 truncate text-sm">
-            {comparing ? "비교 중" : mode === "filmstrip" ? `${index + 1} / ${photos.length}` : album.title}
+            {comparing
+              ? "비교 중"
+              : mode === "filmstrip"
+                ? shown.length
+                  ? `${index + 1} / ${shown.length}`
+                  : ""
+                : album.title}
           </span>
           <span
             className={`text-center text-sm ${
@@ -120,14 +134,25 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
         </header>
 
         {ratings.locked && (
-          <p className="flex-none bg-emerald-900/60 px-4 py-2 text-center text-sm">
-            셀렉을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.
-          </p>
+          <div className="flex flex-none items-center justify-between gap-3 bg-emerald-900/60 px-4 py-2 text-sm">
+            <span>셀렉을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.</span>
+            <button type="button" onClick={toggleOnlyRated} className="flex-none underline">
+              {onlyRated ? "전체 보기" : "고른 사진만"}
+            </button>
+          </div>
         )}
 
-        {comparing ? (
+        {shown.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-zinc-300">
+            <p>고른 사진이 없어요.</p>
+            <button type="button" onClick={toggleOnlyRated} className="rounded-full border border-zinc-500 px-4 py-2 text-sm">
+              전체 보기
+            </button>
+          </div>
+        ) : comparing ? (
           <CompareView
-            photos={photos}
+            key={String(onlyRated)}
+            photos={shown}
             pinned={pinned}
             candidate={index}
             onCandidateChange={changeIndex}
@@ -138,7 +163,8 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           />
         ) : mode === "filmstrip" ? (
           <Filmstrip
-            photos={photos}
+            key={String(onlyRated)}
+            photos={shown}
             index={index}
             onIndexChange={changeIndex}
             ratings={ratings}
@@ -147,7 +173,11 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           />
         ) : (
           <Grid
-            photos={photos}
+            key={String(onlyRated)}
+            photos={shown}
+            hint={`${onlyRated ? "고른 사진" : "전체"} ${shown.length}장 · 사진을 누르면 ${
+              ratings.locked ? "크게 볼 수 있어요." : "크게 보고 별점을 매길 수 있어요."
+            }`}
             ratings={ratings.ratings}
             currentIndex={index}
             onOpen={(i) => {
@@ -177,7 +207,10 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           <p className="text-zinc-300">작가님께 카톡으로 다 골랐다고 알려 주세요.</p>
           <button
             type="button"
-            onClick={() => setJustFinished(false)}
+            onClick={() => {
+              setJustFinished(false);
+              setOnlyRated(true);
+            }}
             className="rounded-lg border border-zinc-500 px-5 py-3 text-sm"
           >
             고른 사진 다시 보기

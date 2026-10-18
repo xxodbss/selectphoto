@@ -9,10 +9,11 @@ type Props = {
   photos: SharedPhoto[];
   ratings: Record<string, number>;
   currentIndex: number; // 필름스트립에서 보던 사진
+  hint: string; // 맨 위 안내 (예: "전체 505장 · 사진을 누르면 …")
   onOpen: (index: number) => void;
 };
 
-export function Grid({ photos, ratings, currentIndex, onOpen }: Props) {
+export function Grid({ photos, ratings, currentIndex, hint, onOpen }: Props) {
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   // 격자로 돌아오면 보던 사진이 가운데 오게 (처음 그릴 때만)
@@ -25,7 +26,7 @@ export function Grid({ photos, ratings, currentIndex, onOpen }: Props) {
     // 페이지 자체가 스크롤된다 (아이폰 상단 누르면 맨 위로)
     <div className="px-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <p className="px-3 pb-3 text-xs text-zinc-400">
-        전체 {photos.length}장 · 사진을 누르면 크게 보고 별점을 매길 수 있어요.
+        {hint}
       </p>
       <ul className="grid grid-cols-3 gap-1">
         {photos.map((photo, i) => {
