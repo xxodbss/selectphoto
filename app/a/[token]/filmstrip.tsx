@@ -36,9 +36,9 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
 
   function handleRate(stars: number, mode: RateMode) {
     if (ratings.rate(photo.id, stars, mode) === "limit") {
-      setNotice(`5점은 최대 ${fiveStarLimit}장까지예요. 다른 사진의 5점을 낮추면 줄 수 있어요.`);
+      setNotice(`5점은 최대 ${fiveStarLimit}장까지예요.`);
       clearTimeout(noticeTimer.current);
-      noticeTimer.current = setTimeout(() => setNotice(null), 3000);
+      noticeTimer.current = setTimeout(() => setNotice(null), 3500);
     }
   }
 

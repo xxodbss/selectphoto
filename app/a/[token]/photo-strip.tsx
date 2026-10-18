@@ -1,16 +1,15 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- 미리 줄여 둔 썸네일을 그대로 쓴다 */
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { photoUrl } from "@/lib/photos";
 import type { SharedPhoto } from "./types";
 
-// 애플 사진 앱처럼: 좁은 썸네일이 촘촘히, 지금 사진만 원래 비율로 넓게
+// 애플 사진 앱처럼 좁은 썸네일이 촘촘히, 지금 사진은 얇은 테두리로 표시
 const HEIGHT = 44;
-const NARROW = 24; // 좁은 썸네일 폭
+const NARROW = 24; // 썸네일 폭
 const GAP = 2;
 const PITCH = NARROW + GAP; // 썸네일 한 칸이 차지하는 폭
-const CURRENT_MARGIN = 6; // 지금 사진 양옆 여백
 const SETTLE_MS = 150; // 손을 떼고 띠가 멈췄다고 볼 시간
 
 type Props = {
@@ -25,27 +24,11 @@ export function PhotoStrip({ photos, index, onScrub, onSelect }: Props) {
   const fingerDown = useRef(false);
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [scrubbing, setScrubbing] = useState(false);
-  const [ratios, setRatios] = useState<Record<string, number>>({});
 
-  const currentRatio = ratios[photos[index].id] ?? 1.5;
-  const currentWidth = Math.max(30, Math.min(80, currentRatio * HEIGHT));
-
-  // 지금 사진이 띠 가운데 오는 스크롤 위치
-  // (훑는 중에는 모든 칸이 같은 폭이라 index * PITCH)
-  const target = scrubbing
-    ? index * PITCH
-    : index * PITCH + (currentWidth + CURRENT_MARGIN * 2 - NARROW) / 2;
-
-  // 훑기 시작/끝에 칸 폭이 바뀌므로 위치를 바로 맞춘다
-  useLayoutEffect(() => {
-    if (stripRef.current) stripRef.current.scrollLeft = target;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrubbing]);
-
-  // 큰 사진을 넘기면 띠도 따라간다
+  // 큰 사진을 넘기면 띠도 따라가서 지금 사진이 가운데 온다
   useEffect(() => {
-    if (!scrubbing) stripRef.current?.scrollTo({ left: target, behavior: "smooth" });
-  }, [scrubbing, target]);
+    if (!scrubbing) stripRef.current?.scrollTo({ left: index * PITCH, behavior: "smooth" });
+  }, [scrubbing, index]);
 
   function startScrub() {
     if (!scrubbing) setScrubbing(true);
@@ -92,35 +75,27 @@ export function PhotoStrip({ photos, index, onScrub, onSelect }: Props) {
     >
       {/* 양 끝 여백: 첫 사진과 마지막 사진도 가운데 올 수 있게 */}
       <div className="flex-none" style={{ width: `calc(50% - ${NARROW / 2 + GAP}px)` }} />
-      {photos.map((photo, i) => {
-        const isCurrent = i === index && !scrubbing;
-        return (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => onSelect(i)}
-            className="flex-none overflow-hidden"
-            style={{
-              height: HEIGHT,
-              width: isCurrent ? currentWidth : NARROW,
-              marginInline: isCurrent ? CURRENT_MARGIN : 0,
-            }}
-            aria-label={`${i + 1}번 사진으로`}
-          >
-            <img
-              src={photoUrl(photo.thumb_path)}
-              alt=""
-              loading="lazy"
-              draggable={false}
-              onLoad={(e) => {
-                const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-                if (h) setRatios((prev) => (prev[photo.id] ? prev : { ...prev, [photo.id]: w / h }));
-              }}
-              className="h-full w-full object-cover"
-            />
-          </button>
-        );
-      })}
+      {photos.map((photo, i) => (
+        <button
+          key={photo.id}
+          type="button"
+          onClick={() => onSelect(i)}
+          className="relative flex-none overflow-hidden"
+          style={{ height: HEIGHT, width: NARROW }}
+          aria-label={`${i + 1}번 사진으로`}
+          aria-current={i === index}
+        >
+          <img
+            src={photoUrl(photo.thumb_path)}
+            alt=""
+            loading="lazy"
+            draggable={false}
+            className="h-full w-full object-cover"
+          />
+          {/* 안쪽 테두리라 크기가 바뀌지 않는다 */}
+          {i === index && <span className="absolute inset-0 border-[1.5px] border-white" />}
+        </button>
+      ))}
       <div className="flex-none" style={{ width: `calc(50% - ${NARROW / 2 + GAP}px)` }} />
     </div>
   );
