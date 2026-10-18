@@ -22,9 +22,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // 브라우저 확장(예: Zotero)이 <html>에 속성을 덧붙여도 경고하지 않게 (이 태그에만 적용)
+    // 브라우저나 확장(예: Zotero, 카톡 인앱 브라우저)이 <html>·<body>에 속성을 덧붙여도
+    // 경고하지 않게 (이 두 태그에만 적용, 안쪽 화면은 그대로 검사)
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }
