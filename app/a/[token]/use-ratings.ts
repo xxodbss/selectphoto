@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SharedAlbum } from "./types";
 
-const SAVE_DELAY_MS = 1500; // 별을 누르고 이만큼 지나면 저장
-
 export type SaveState = "idle" | "saving" | "saved" | "error";
 export type RateResult = "ok" | "limit" | "locked";
 // toggle: 같은 별을 다시 누르면 취소(탭) / set: 그 점수로 정하기(슬라이드)
 export type RateMode = "toggle" | "set";
 export type FinishResult = "ok" | "save-failed" | "error";
+
+type Batch = { photo_id: string; rating: number }[];
 
 // 모델용 함수 호출 (keepalive: 창이 닫히는 순간에도 요청이 끝까지 가게)
 async function callRpc(fn: string, body: object) {
@@ -27,7 +27,8 @@ async function callRpc(fn: string, body: object) {
   return { ok: false, message: String(error.message ?? "") };
 }
 
-// 별점을 들고 있다가 모아서 save_ratings 함수로 저장한다
+// 별을 누르는 즉시 save_ratings로 저장한다
+// (카톡 인앱 브라우저는 창을 닫을 때 신호를 잘 안 줘서, 기다렸다 저장하면 빠질 수 있음)
 export function useRatings(token: string, album: SharedAlbum) {
   const [ratings, setRatings] = useState<Record<string, number>>(() =>
     Object.fromEntries(album.photos.map((p) => [p.id, p.rating])),
@@ -35,66 +36,77 @@ export function useRatings(token: string, album: SharedAlbum) {
   const [locked, setLocked] = useState(Boolean(album.submitted_at));
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
-  const pending = useRef(new Map<string, number>()); // 아직 저장 안 한 별점
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const chain = useRef(Promise.resolve(true)); // 저장을 순서대로 (늦게 보낸 게 덮어쓰지 않게)
+  const latest = useRef(ratings); // 나갈 때 보낼 최신 별점
+  const pending = useRef(new Map<string, number>()); // 아직 보내지 않은 별점
+  const inFlight = useRef<Promise<boolean> | null>(null); // 지금 보내는 중인 요청
+  const inFlightIds = useRef<string[]>([]);
 
   const fiveCount = useMemo(
     () => Object.values(ratings).filter((r) => r === 5).length,
     [ratings],
   );
 
-  // 저장할 게 없거나 저장에 성공하면 true
-  const send = useCallback(async () => {
-    if (pending.current.size === 0) return true;
-    const batch = [...pending.current].map(([photo_id, rating]) => ({ photo_id, rating }));
-    pending.current.clear();
-    setSaveState("saving");
-
-    // 실패한 별점은 다음에 다시 보낸다 (그사이 새로 누른 값이 있으면 그걸 우선)
-    const requeue = () => {
+  // 한 묶음 보내기. 실패하면 다음에 다시 보낸다 (그사이 새로 누른 값이 있으면 그걸 우선)
+  const sendBatch = useCallback(
+    async (batch: Batch) => {
+      setSaveState("saving");
+      try {
+        const { ok, message } = await callRpc("save_ratings", { p_token: token, p_ratings: batch });
+        if (ok) {
+          if (pending.current.size === 0) setSaveState("saved");
+          return true;
+        }
+        if (message === "ALREADY_SUBMITTED") {
+          setLocked(true);
+          setSaveState("idle");
+          return false;
+        }
+      } catch {}
       for (const { photo_id, rating } of batch) {
         if (!pending.current.has(photo_id)) pending.current.set(photo_id, rating);
       }
       setSaveState("error");
       return false;
-    };
+    },
+    [token],
+  );
 
-    try {
-      const { ok, message } = await callRpc("save_ratings", { p_token: token, p_ratings: batch });
-      if (ok) {
-        setSaveState("saved");
-        return true;
-      }
-      if (message === "ALREADY_SUBMITTED") {
-        setLocked(true);
-        setSaveState("idle");
-        return false;
-      }
-      return requeue();
-    } catch {
-      return requeue();
-    }
-  }, [token]);
+  // 쌓인 별점을 보낸다. 보내는 중이면 끝난 뒤 이어서 보낸다 (순서가 뒤바뀌지 않게)
+  const flush = useCallback(async (): Promise<boolean> => {
+    while (inFlight.current) await inFlight.current;
+    if (pending.current.size === 0) return true;
 
-  const flush = useCallback(() => {
-    clearTimeout(timer.current);
-    chain.current = chain.current.then(send);
-    return chain.current;
-  }, [send]);
+    const batch = [...pending.current].map(([photo_id, rating]) => ({ photo_id, rating }));
+    pending.current.clear();
+    inFlightIds.current = batch.map((b) => b.photo_id);
 
-  // 다른 앱으로 가거나 창을 닫을 때 저장
+    const request = sendBatch(batch).finally(() => {
+      inFlight.current = null;
+      inFlightIds.current = [];
+    });
+    inFlight.current = request;
+    return request;
+  }, [sendBatch]);
+
+  // 나갈 때: 기다리지 않고 보내는 중인 것까지 최신 값으로 바로 보낸다
   useEffect(() => {
+    function sendNow() {
+      const ids = new Set([...pending.current.keys(), ...inFlightIds.current]);
+      if (ids.size === 0) return;
+      const batch = [...ids].map((id) => ({ photo_id: id, rating: latest.current[id] ?? 0 }));
+      pending.current.clear();
+      sendBatch(batch);
+    }
     const onHide = () => {
-      if (document.visibilityState === "hidden") flush();
+      if (document.visibilityState === "hidden") sendNow();
     };
     document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("pagehide", flush);
+    window.addEventListener("pagehide", sendNow);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("pagehide", sendNow);
     };
-  }, [flush]);
+  }, [sendBatch]);
 
   function rate(photoId: string, stars: number, mode: RateMode = "toggle"): RateResult {
     if (locked) return "locked";
@@ -106,17 +118,19 @@ export function useRatings(token: string, album: SharedAlbum) {
       return "limit";
     }
 
-    setRatings((prev) => ({ ...prev, [photoId]: next }));
+    const updated = { ...ratings, [photoId]: next };
+    latest.current = updated;
+    setRatings(updated);
     pending.current.set(photoId, next);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(flush, SAVE_DELAY_MS);
+    flush();
     return "ok";
   }
 
-  // "다 골랐어요": 남은 별점을 먼저 저장하고, 성공했을 때만 잠근다
+  // "다 골랐어요": 남은 별점이 모두 저장된 걸 확인한 뒤에만 잠근다
   async function finish(): Promise<FinishResult> {
-    const saved = await flush();
-    if (!saved || pending.current.size > 0) return "save-failed";
+    while (inFlight.current || pending.current.size > 0) {
+      if (!(await flush())) return "save-failed";
+    }
     try {
       const { ok, message } = await callRpc("submit_album", { p_token: token });
       // 이미 마친 앨범이어도 결과는 같다
