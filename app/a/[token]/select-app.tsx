@@ -93,7 +93,8 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
               ? "비교 중"
               : mode === "filmstrip"
                 ? shown.length
-                  ? `${index + 1} / ${shown.length}`
+                  ? // 고른 사진만 볼 때는 원래 번호도 같이 (예: 37번 · 3 / 10)
+                    `${onlyRated ? `${photoNumbers.get(shown[index].id)}번 · ` : ""}${index + 1} / ${shown.length}`
                   : ""
                 : album.title}
           </span>
