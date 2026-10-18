@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAuthor } from "@/lib/auth";
-import { effectiveFiveStarLimit } from "@/lib/five-star";
 import { logout } from "./actions";
 import { AlbumForm } from "./album-form";
 import { StatusBadge } from "./status-badge";
@@ -62,8 +61,7 @@ async function AlbumList() {
             <div className="flex flex-col gap-1">
               <span className="font-semibold">{album.title}</span>
               <span className="text-sm text-zinc-500">
-                사진 {album.photos[0]?.count ?? 0}장 · 5점 최대{" "}
-                {effectiveFiveStarLimit(album.five_star_limit, album.photos[0]?.count ?? 0)}장
+                사진 {album.photos[0]?.count ?? 0}장 · 5점 최대 {album.five_star_limit}장
               </span>
             </div>
             <StatusBadge submitted={Boolean(album.submitted_at)} />

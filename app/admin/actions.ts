@@ -20,15 +20,18 @@ export async function createAlbum(
   const { supabase } = await requireAuthor();
 
   const title = String(formData.get("title") ?? "").trim();
+  const limit = Number(formData.get("five_star_limit"));
 
   if (!title || title.length > 100) {
     return { error: "앨범 이름을 1–100자로 입력해 주세요." };
   }
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+    return { error: "5점 한도는 1–500 사이의 숫자로 입력해 주세요." };
+  }
 
-  // 5점 한도는 비워 두면 사진 장수의 10%
   const { data, error } = await supabase
     .from("albums")
-    .insert({ title })
+    .insert({ title, five_star_limit: limit })
     .select("id")
     .single();
 

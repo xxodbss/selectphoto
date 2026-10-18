@@ -5,7 +5,6 @@ import { requireAuthor } from "@/lib/auth";
 import { StatusBadge } from "../../status-badge";
 import { reopenAlbum } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
-import { LimitEditor } from "./limit-editor";
 import { PhotoManager } from "./photo-manager";
 import { ResultPanel } from "./result-panel";
 import { UploadPhotos } from "./upload-photos";
@@ -47,12 +46,9 @@ async function AlbumDetail({ id }: { id: string }) {
         <h1 className="text-2xl font-bold">{album.title}</h1>
         <StatusBadge submitted={Boolean(album.submitted_at)} />
       </div>
-      <LimitEditor
-        albumId={id}
-        limit={album.five_star_limit}
-        photoCount={album.photos.length}
-        fiveCount={album.photos.filter((p) => p.rating === 5).length}
-      />
+      <p className="text-sm text-zinc-500">
+        사진 {album.photos.length}장 · 5점 최대 {album.five_star_limit}장
+      </p>
       {/* PC에서는 공유 링크와 업로드를 나란히 */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
         <div className="flex flex-col lg:w-56 lg:flex-none">

@@ -22,9 +22,19 @@ export function AlbumForm() {
           className="rounded-lg border border-zinc-300 px-3 py-3 text-base dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
-      <p className="text-xs text-zinc-500">
-        5점 최대 장수는 사진 장수의 10%로 정해져요. 앨범 화면에서 바꿀 수 있어요.
-      </p>
+      <label className="flex flex-col gap-1 text-sm">
+        5점 최대 장수 (보정 장수)
+        <input
+          name="five_star_limit"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={500}
+          defaultValue={10}
+          required
+          className="rounded-lg border border-zinc-300 px-3 py-3 text-base dark:border-zinc-700 dark:bg-zinc-900"
+        />
+      </label>
       {state?.error && (
         <p role="alert" className="text-sm text-red-600">
           {state.error}

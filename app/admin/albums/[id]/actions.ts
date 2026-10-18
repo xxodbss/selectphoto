@@ -37,15 +37,3 @@ export async function deletePhotos(albumId: string, photoIds: string[]) {
   refresh();
   return { error: null };
 }
-
-// 5점 한도 정하기 (null이면 사진 장수의 10%로 되돌린다)
-export async function setFiveStarLimit(albumId: string, limit: number | null) {
-  const { supabase } = await requireAuthor();
-  if (limit !== null && (!Number.isInteger(limit) || limit < 1 || limit > 500)) {
-    return { error: "1–500 사이의 숫자로 입력해 주세요." };
-  }
-  const { error } = await supabase.from("albums").update({ five_star_limit: limit }).eq("id", albumId);
-  if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요." };
-  refresh();
-  return { error: null };
-}
