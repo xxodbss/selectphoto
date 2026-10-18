@@ -6,7 +6,6 @@ import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
 import { SwipeViewer, type SwipeViewerHandle } from "./swipe-viewer";
 import type { SharedPhoto } from "./types";
-import { useLimitNotice } from "./use-limit-notice";
 import type { RateMode, RatingsApi } from "./use-ratings";
 import { ZoomableImage } from "./zoomable-image";
 
@@ -17,7 +16,6 @@ type Props = {
   onCandidateChange: (index: number) => void;
   onPin: (index: number) => void; // 아래 사진을 위로 올려 고정
   ratings: RatingsApi;
-  fiveStarLimit: number;
   keyboardEnabled: boolean;
   onClose: () => void;
 };
@@ -30,12 +28,11 @@ export function CompareView({
   onCandidateChange,
   onPin,
   ratings,
-  fiveStarLimit,
   keyboardEnabled,
   onClose,
 }: Props) {
   const viewerRef = useRef<SwipeViewerHandle>(null);
-  const { notice, rate } = useLimitNotice(ratings, fiveStarLimit);
+  const { notice, rate } = ratings;
 
   const pinnedPhoto = photos[pinned];
   const candidatePhoto = photos[candidate];

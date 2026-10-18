@@ -5,6 +5,7 @@ export type SharedPhoto = {
   storage_path: string;
   thumb_path: string;
   rating: number;
+  rated_at: number; // 별점을 누른 시각(밀리초), 기기에 보관한 별점과 비교용
 };
 
 export type SharedAlbum = {

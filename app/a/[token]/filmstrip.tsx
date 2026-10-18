@@ -6,7 +6,6 @@ import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
 import { SwipeViewer, type SwipeViewerHandle } from "./swipe-viewer";
 import type { SharedPhoto } from "./types";
-import { useLimitNotice } from "./use-limit-notice";
 import { SAVE_LABEL, type RatingsApi } from "./use-ratings";
 import { ZoomableImage } from "./zoomable-image";
 
@@ -15,15 +14,14 @@ type Props = {
   index: number;
   onIndexChange: (index: number) => void;
   ratings: RatingsApi;
-  fiveStarLimit: number;
   keyboardEnabled: boolean; // 확인 창이 떠 있으면 끈다
   onCompare: () => void; // 위아래 고정 비교 시작
 };
 
-export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit, keyboardEnabled, onCompare }: Props) {
+export function Filmstrip({ photos, index, onIndexChange, ratings, keyboardEnabled, onCompare }: Props) {
   const viewerRef = useRef<SwipeViewerHandle>(null);
   const [fullscreen, setFullscreen] = useState(false);
-  const { notice, rate } = useLimitNotice(ratings, fiveStarLimit);
+  const { notice, rate } = ratings;
 
   const photo = photos[index];
   const jumpTo = (i: number) => viewerRef.current?.jumpTo(i);

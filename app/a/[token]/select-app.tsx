@@ -117,7 +117,6 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             onCandidateChange={changeIndex}
             onPin={setPinned}
             ratings={ratings}
-            fiveStarLimit={album.five_star_limit}
             keyboardEnabled={!sheetOpen && !justFinished}
             onClose={() => setPinned(null)}
           />
@@ -127,7 +126,6 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             index={index}
             onIndexChange={changeIndex}
             ratings={ratings}
-            fiveStarLimit={album.five_star_limit}
             keyboardEnabled={!sheetOpen && !justFinished}
             onCompare={startCompare}
           />
