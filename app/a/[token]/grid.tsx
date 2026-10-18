@@ -10,11 +10,9 @@ type Props = {
   ratings: Record<string, number>;
   currentIndex: number; // 필름스트립에서 보던 사진
   onOpen: (index: number) => void;
-  columns?: 3 | 6; // PC는 6칸
-  showHint?: boolean; // PC는 오른쪽 칸에 안내가 있어서 뺀다
 };
 
-export function Grid({ photos, ratings, currentIndex, onOpen, columns = 3, showHint = true }: Props) {
+export function Grid({ photos, ratings, currentIndex, onOpen }: Props) {
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   // 격자로 돌아오면 보던 사진이 가운데 오게 (처음 그릴 때만)
@@ -26,12 +24,10 @@ export function Grid({ photos, ratings, currentIndex, onOpen, columns = 3, showH
   return (
     // 격자만 안쪽에서 위아래로 스크롤 (사진이 많을 때 다 보려면 필요)
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-4">
-      {showHint && (
-        <p className="px-3 pb-3 text-xs text-zinc-400">
-          셀렉은 한 사람만 해 주세요. 사진을 누르면 크게 보고 별점을 매길 수 있어요.
-        </p>
-      )}
-      <ul className={`grid gap-1 ${columns === 6 ? "grid-cols-6" : "grid-cols-3"}`}>
+      <p className="px-3 pb-3 text-xs text-zinc-400">
+        셀렉은 한 사람만 해 주세요. 사진을 누르면 크게 보고 별점을 매길 수 있어요.
+      </p>
+      <ul className="grid grid-cols-3 gap-1">
         {photos.map((photo, i) => {
           const rating = ratings[photo.id] ?? 0;
           return (

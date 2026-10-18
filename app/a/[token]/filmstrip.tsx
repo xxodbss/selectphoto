@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { photoUrl } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
@@ -23,9 +23,10 @@ type Props = {
   onIndexChange: (index: number) => void;
   ratings: RatingsApi;
   fiveStarLimit: number;
+  keyboardEnabled: boolean; // 확인 창이 떠 있으면 끈다
 };
 
-export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit }: Props) {
+export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit, keyboardEnabled }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
   const [zoomed, setZoomed] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -63,13 +64,30 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
     main?.scrollTo({ left: i * main.clientWidth, behavior: "smooth" });
   }
 
-  // 아래 띠를 훑는 동안에는 큰 사진을 애니메이션 없이 바로 바꾼다
+  // 아래 띠를 훑거나 키보드로 넘길 때는 큰 사진을 애니메이션 없이 바로 바꾼다
   function jumpTo(i: number) {
     setZoomed(false);
     onIndexChange(i);
     const main = mainRef.current;
     main?.scrollTo({ left: i * main.clientWidth, behavior: "instant" });
   }
+
+  // PC 키보드: ← → 사진 이동, 1–5 별점(같은 숫자 다시 = 취소), 0 지우기, Esc 크게 보기 닫기
+  useEffect(() => {
+    if (!keyboardEnabled) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "ArrowRight" && index < photos.length - 1) jumpTo(index + 1);
+      else if (e.key === "ArrowLeft" && index > 0) jumpTo(index - 1);
+      else if (e.key >= "1" && e.key <= "5") handleRate(Number(e.key), "toggle");
+      else if (e.key === "0") handleRate(0, "set");
+      else if (e.key === "Escape" && fullscreen) setFullscreen(false);
+      else return;
+      e.preventDefault();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   return (
     <>
