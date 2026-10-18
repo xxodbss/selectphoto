@@ -53,13 +53,25 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           >
             ★5점 {ratings.fiveCount}/{album.five_star_limit}
           </span>
-          <button
-            type="button"
-            onClick={() => setViewMode(nextMode)}
-            className="flex-none rounded-full border border-zinc-500 px-3 py-1 text-xs"
-          >
-            {MODE_LABEL[nextMode]}로 보기
-          </button>
+          <div className="flex flex-none gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode(nextMode)}
+              className="rounded-full border border-zinc-500 px-3 py-1 text-xs"
+            >
+              {MODE_LABEL[nextMode]}로 보기
+            </button>
+            {/* 마무리는 전체를 훑어보는 격자에서 */}
+            {mode === "grid" && !ratings.locked && (
+              <button
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
+              >
+                완료
+              </button>
+            )}
+          </div>
         </header>
 
         {ratings.locked && (
@@ -89,18 +101,6 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           />
         )}
 
-        {/* 마무리는 전체를 훑어보는 격자에서 */}
-        {mode === "grid" && !ratings.locked && (
-          <div className="flex-none px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
-            <button
-              type="button"
-              onClick={() => setSheetOpen(true)}
-              className="w-full rounded-lg bg-zinc-100 py-3 font-semibold text-zinc-900"
-            >
-              다 골랐어요
-            </button>
-          </div>
-        )}
       </main>
 
       {sheetOpen && (
