@@ -27,7 +27,7 @@ async function AlbumDetail({ id }: { id: string }) {
   const { supabase } = await requireAuthor();
   const { data: album } = await supabase
     .from("albums")
-    .select("title, share_token, five_star_limit, submitted_at, photos(id, filename, thumb_path, sort_order)")
+    .select("title, share_token, five_star_limit, submitted_at, photos(id, filename, thumb_path, sort_order, rating)")
     .eq("id", id)
     .order("sort_order", { referencedTable: "photos" })
     .maybeSingle();
@@ -36,6 +36,12 @@ async function AlbumDetail({ id }: { id: string }) {
   if (!album) {
     notFound();
   }
+
+  // 점수별 장수 (0 = 안 고름)
+  const counts = [5, 4, 3, 2, 1, 0].map((stars) => ({
+    stars,
+    count: album.photos.filter((p) => p.rating === stars).length,
+  }));
 
   return (
     <>
@@ -50,17 +56,38 @@ async function AlbumDetail({ id }: { id: string }) {
       {!album.submitted_at && <UploadPhotos albumId={id} />}
 
       {album.photos.length > 0 && (
+        <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="font-semibold">모델이 고른 별점</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {counts
+              .map(({ stars, count }) => `${stars ? `★${stars}` : "안 고름"} ${count}장`)
+              .join(" · ")}
+          </p>
+          <p className="text-xs text-zinc-500">
+            모델이 고르는 중이면 새로고침해서 최신 별점을 볼 수 있어요.
+          </p>
+        </section>
+      )}
+
+      {album.photos.length > 0 && (
         <ul className="grid grid-cols-3 gap-2">
           {album.photos.map((photo, i) => (
             <li key={photo.id} className="flex flex-col gap-1">
-              {/* Vercel 이미지 최적화 대신 미리 줄여 둔 썸네일을 그대로 쓴다 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photoUrl(photo.thumb_path)}
-                alt={photo.filename}
-                loading="lazy"
-                className="aspect-square w-full rounded-md bg-zinc-100 object-cover dark:bg-zinc-800"
-              />
+              <div className="relative">
+                {/* Vercel 이미지 최적화 대신 미리 줄여 둔 썸네일을 그대로 쓴다 */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl(photo.thumb_path)}
+                  alt={photo.filename}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md bg-zinc-100 object-cover dark:bg-zinc-800"
+                />
+                {photo.rating > 0 && (
+                  <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-100">
+                    ★{photo.rating}
+                  </span>
+                )}
+              </div>
               <span className="truncate text-xs text-zinc-500">
                 {i + 1}. {photo.filename}
               </span>
