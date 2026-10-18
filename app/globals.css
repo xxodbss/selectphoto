@@ -25,3 +25,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* 모델 화면: 페이지 바탕도 브릿지 회색으로, 끝까지 당겨도 하얗게 비치거나 출렁이지 않게 */
+html:has(.bridge-page),
+html:has(.bridge-page) body {
+  background: rgb(50 50 50);
+  overscroll-behavior: none;
+}

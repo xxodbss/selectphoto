@@ -20,6 +20,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const [pinned, setPinned] = useState<number | null>(null); // 비교할 때 위에 고정한 사진
   const { photos } = album;
   const comparing = pinned !== null && mode === "filmstrip";
+  const pageScroll = mode === "grid";
 
   // 처음엔 이 기기에서 마지막에 보던 사진(없거나 지워졌으면 첫 사진), 그 뒤로는 고른 사진
   const index =
@@ -56,12 +57,21 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   }
 
   return (
-    // 화면 전체를 고정해서 위아래로 밀어도 페이지가 움직이지 않게
+    // 필름스트립·비교는 화면 전체를 고정해서 위아래로 밀어도 움직이지 않게,
+    // 격자는 페이지 자체가 스크롤되게 (아이폰 상단을 누르면 맨 위로 가는 기능이 동작하도록)
     // PC에서도 휴대폰 화면을 가운데에 휴대폰 폭으로 보여준다
-    <div className="fixed inset-0 flex justify-center overscroll-none bg-bridge text-zinc-100">
-      <main className="flex h-full w-full max-w-[480px] flex-col lg:border-x lg:border-black/30">
-        {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 */}
-        <header className="grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
+    <div
+      className={`bridge-page flex justify-center bg-bridge text-zinc-100 ${
+        pageScroll ? "min-h-dvh" : "fixed inset-0 overscroll-none"
+      }`}
+    >
+      <main className={`flex w-full max-w-[480px] flex-col lg:border-x lg:border-black/30 ${pageScroll ? "" : "h-full"}`}>
+        {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 (격자에서는 맨 위에 붙어 있음) */}
+        <header
+          className={`grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 ${
+            pageScroll ? "sticky top-0 z-10 bg-bridge" : ""
+          }`}
+        >
           <span className="min-w-0 truncate text-sm">
             {comparing ? "비교 중" : mode === "filmstrip" ? `${index + 1} / ${photos.length}` : album.title}
           </span>
