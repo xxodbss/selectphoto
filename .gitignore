@@ -29,3 +29,9 @@ samples/
 
 # Claude Code 개인 설정
 .claude/settings.local.json
+
+# 기타 (create-next-app 기본값에서 가져옴)
+/coverage
+/.pnp
+.pnp.*
+*.pem
