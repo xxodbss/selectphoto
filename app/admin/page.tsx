@@ -7,13 +7,18 @@ import { StatusBadge } from "./status-badge";
 
 export default function AdminPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
-      <h1 className="text-2xl font-bold">내 앨범</h1>
+    // PC에서는 왼쪽 칸에 목록·로그아웃이 있으므로 새 앨범 양식만 보인다
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8 lg:py-12">
+      <h1 className="text-2xl font-bold lg:hidden">내 앨범</h1>
       {/* 로그인 정보는 요청 때마다 읽으므로 Suspense 안에 둔다 */}
       <Suspense fallback={<p className="text-sm text-zinc-500">불러오는 중…</p>}>
-        <AuthorBar />
+        <div className="lg:hidden">
+          <AuthorBar />
+        </div>
         <AlbumForm />
-        <AlbumList />
+        <div className="lg:hidden">
+          <AlbumList />
+        </div>
       </Suspense>
     </main>
   );

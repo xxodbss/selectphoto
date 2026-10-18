@@ -11,8 +11,9 @@ import { UploadPhotos } from "./upload-photos";
 
 export default function AlbumPage({ params }: PageProps<"/admin/albums/[id]">) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
-      <Link href="/admin" className="text-sm underline">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8 lg:max-w-5xl lg:px-8">
+      {/* PC에서는 왼쪽 칸에 목록이 있어서 뒤로 가기가 필요 없다 */}
+      <Link href="/admin" className="text-sm underline lg:hidden">
         ← 내 앨범
       </Link>
       {/* 주소 속 ID와 로그인 정보는 요청 때마다 읽으므로 Suspense 안에 둔다 */}
@@ -48,17 +49,24 @@ async function AlbumDetail({ id }: { id: string }) {
       <p className="text-sm text-zinc-500">
         사진 {album.photos.length}장 · 5점 최대 {album.five_star_limit}장
       </p>
-      <CopyLinkButton token={album.share_token} />
-      {album.submitted_at ? (
-        // 모델이 실수로 마쳤거나 다시 고르고 싶을 때 (별점은 그대로 남음)
-        <form action={reopenAlbum.bind(null, id)}>
-          <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm dark:border-zinc-700">
-            셀렉 다시 열기
-          </button>
-        </form>
-      ) : (
-        <UploadPhotos albumId={id} />
-      )}
+      {/* PC에서는 공유 링크와 업로드를 나란히 */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
+        <div className="flex flex-col lg:w-56 lg:flex-none">
+          <CopyLinkButton token={album.share_token} />
+        </div>
+        <div className="lg:flex-1">
+          {album.submitted_at ? (
+            // 모델이 실수로 마쳤거나 다시 고르고 싶을 때 (별점은 그대로 남음)
+            <form action={reopenAlbum.bind(null, id)}>
+              <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm dark:border-zinc-700">
+                셀렉 다시 열기
+              </button>
+            </form>
+          ) : (
+            <UploadPhotos albumId={id} />
+          )}
+        </div>
+      </div>
 
       {album.photos.length > 0 && (
         <>

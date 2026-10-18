@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuthor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -37,5 +38,7 @@ export async function createAlbum(
   if (error) {
     return { error: "앨범을 만들지 못했어요. 잠시 후 다시 시도해 주세요." };
   }
+  // 왼쪽 앨범 목록(공통 틀)도 새 앨범이 보이게 다시 그린다
+  revalidatePath("/admin", "layout");
   redirect(`/admin/albums/${data.id}`);
 }

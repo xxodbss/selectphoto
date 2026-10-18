@@ -82,7 +82,7 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
         </p>
       )}
 
-      <ul className="grid grid-cols-3 gap-2">
+      <ul className="grid grid-cols-3 gap-2 lg:grid-cols-6">
         {photos.map((photo, i) => {
           const isSelected = selected.has(photo.id);
           return (
