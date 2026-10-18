@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { photoUrl } from "@/lib/photos";
+import { photoUrl, photoUrlWithName } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
 import { SwipeViewer, type SwipeViewerHandle } from "./swipe-viewer";
@@ -80,7 +80,7 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, keyboardEnabl
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-bridge">
           <ZoomableImage
-            src={photoUrl(photo.storage_path)}
+            src={photoUrlWithName(photo.storage_path, photo.filename)}
             placeholder={photoUrl(photo.thumb_path)}
             alt={photo.filename}
           />

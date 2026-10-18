@@ -1,7 +1,7 @@
 "use client";
 
 import { useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
-import { photoUrl } from "@/lib/photos";
+import { photoUrl, photoUrlWithName } from "@/lib/photos";
 import type { SharedPhoto } from "./types";
 import { ZoomableImage } from "./zoomable-image";
 
@@ -65,7 +65,7 @@ export function SwipeViewer({ photos, index, onIndexChange, ref }: Props) {
         return (
           <div key={photo.id} className="h-full w-full flex-none snap-center">
             <ZoomableImage
-              src={photoUrl(near ? photo.storage_path : photo.thumb_path)}
+              src={near ? photoUrlWithName(photo.storage_path, photo.filename) : photoUrl(photo.thumb_path)}
               placeholder={photoUrl(photo.thumb_path)}
               alt={photo.filename}
               loading={near ? "eager" : "lazy"}

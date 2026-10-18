@@ -198,9 +198,9 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
 
   // 큰 사진을 받는 동안 이미 받아 둔 썸네일을 먼저 깔아 두고, 아래에 얇은 진행 막대를 보여준다
   const needsLoad = Boolean(placeholder) && placeholder !== src;
-  const { url, progress, failed } = useImageProgress(src, needsLoad);
-  // 다 받은 사진을 그대로 띄운다 (받기에 실패하면 일반 방식으로)
-  const displaySrc = !needsLoad ? src : (url ?? (failed ? src : undefined));
+  const { progress, done, failed } = useImageProgress(src, needsLoad);
+  // 다 받은 뒤에 같은 주소로 띄운다 (받기에 실패하면 일반 방식으로)
+  const displaySrc = !needsLoad || done || failed ? src : undefined;
   const waiting = needsLoad && (displaySrc === undefined || loadedSrc !== displaySrc);
 
   return (
@@ -220,6 +220,8 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
         ref={imgRef}
         src={displaySrc ?? EMPTY_IMAGE}
         alt={displaySrc ? alt : ""}
+        // 진행률을 셀 때 받은 사진(같은 방식의 요청)을 그대로 다시 쓰게
+        crossOrigin={needsLoad ? "anonymous" : undefined}
         loading={loading}
         draggable={false}
         onLoad={() => displaySrc && setLoadedSrc(displaySrc)}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { photoUrl } from "@/lib/photos";
+import { photoUrl, photoUrlWithName } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
 import { SwipeViewer, type SwipeViewerHandle } from "./swipe-viewer";
@@ -70,7 +70,7 @@ export function CompareView({
           <div className="absolute inset-0">
             <ZoomableImage
               key={pinnedPhoto.id}
-              src={photoUrl(pinnedPhoto.storage_path)}
+              src={photoUrlWithName(pinnedPhoto.storage_path, pinnedPhoto.filename)}
               placeholder={photoUrl(pinnedPhoto.thumb_path)}
               alt={pinnedPhoto.filename}
             />
