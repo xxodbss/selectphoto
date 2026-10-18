@@ -7,6 +7,8 @@ const SAVE_DELAY_MS = 1500; // 별을 누르고 이만큼 지나면 저장
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 export type RateResult = "ok" | "limit" | "locked";
+// toggle: 같은 별을 다시 누르면 취소(탭) / set: 그 점수로 정하기(슬라이드)
+export type RateMode = "toggle" | "set";
 
 // 별점을 들고 있다가 모아서 save_ratings 함수로 저장한다
 export function useRatings(token: string, album: SharedAlbum) {
@@ -88,10 +90,11 @@ export function useRatings(token: string, album: SharedAlbum) {
     };
   }, [flush]);
 
-  function rate(photoId: string, stars: number): RateResult {
+  function rate(photoId: string, stars: number, mode: RateMode = "toggle"): RateResult {
     if (locked) return "locked";
     const current = ratings[photoId] ?? 0;
-    const next = current === stars ? 0 : stars; // 같은 별을 다시 누르면 취소
+    const next = mode === "toggle" && current === stars ? 0 : stars;
+    if (next === current) return "ok";
 
     if (next === 5 && current !== 5 && fiveCount >= album.five_star_limit) {
       return "limit";

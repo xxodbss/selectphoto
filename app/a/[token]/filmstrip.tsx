@@ -5,7 +5,7 @@ import { photoUrl } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
 import type { SharedPhoto } from "./types";
-import type { RatingsApi, SaveState } from "./use-ratings";
+import type { RateMode, RatingsApi, SaveState } from "./use-ratings";
 import { ZoomableImage } from "./zoomable-image";
 
 const PRELOAD = 2; // 지금 사진 앞뒤로 큰 사진을 미리 불러올 장수
@@ -28,13 +28,14 @@ type Props = {
 export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const photo = photos[index];
 
-  function handleRate(stars: number) {
-    if (ratings.rate(photo.id, stars) === "limit") {
+  function handleRate(stars: number, mode: RateMode) {
+    if (ratings.rate(photo.id, stars, mode) === "limit") {
       setNotice(`5점은 최대 ${fiveStarLimit}장까지예요. 다른 사진의 5점을 낮추면 줄 수 있어요.`);
       clearTimeout(noticeTimer.current);
       noticeTimer.current = setTimeout(() => setNotice(null), 3000);
@@ -97,25 +98,57 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
         })}
       </div>
 
-      <div className="flex-none pt-2">
+      <div className="relative flex-none pt-2">
         <StarBar
           value={ratings.ratings[photo.id] ?? 0}
           disabled={ratings.locked}
           onRate={handleRate}
         />
+        {/* 가운데 글자가 오른쪽 확대 버튼과 겹치지 않게 양옆을 비운다 */}
         {notice ? (
-          <p role="alert" className="px-4 py-1 text-center text-xs text-amber-400">
+          <p role="alert" className="px-14 py-1 text-center text-xs text-amber-400">
             {notice}
           </p>
         ) : (
-          <p className="truncate px-4 py-1 text-center text-xs text-zinc-400">
+          <p className="truncate px-14 py-1 text-center text-xs text-zinc-400">
             {photo.filename}
             {SAVE_LABEL[ratings.saveState] && ` · ${SAVE_LABEL[ratings.saveState]}`}
           </p>
         )}
+        <button
+          type="button"
+          onClick={() => setFullscreen(true)}
+          className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-500 text-zinc-300"
+          aria-label="크게 보기"
+        >
+          <ExpandIcon />
+        </button>
       </div>
 
       <PhotoStrip photos={photos} index={index} onScrub={jumpTo} onSelect={goTo} />
+
+      {/* 크게 보기: 화면 전체에 띄우고, 두 손가락·두 번 탭으로 확대 */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-bridge">
+          <ZoomableImage src={photoUrl(photo.storage_path)} alt={photo.filename} />
+          <button
+            type="button"
+            onClick={() => setFullscreen(false)}
+            className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-sm text-white"
+          >
+            닫기 ✕
+          </button>
+        </div>
+      )}
     </>
+  );
+}
+
+// 네 모서리 화살표 (크게 보기)
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
