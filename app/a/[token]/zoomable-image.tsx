@@ -204,7 +204,8 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
   const waiting = needsLoad && (displaySrc === undefined || loadedSrc !== displaySrc);
 
   return (
-    <div ref={boxRef} className="relative h-full w-full overflow-hidden">
+    // 사진 칸을 사진 비율 그대로 가운데에 둔다 (꾹 누를 때 아이폰 미리보기가 상자 크기로 퍼지지 않게)
+    <div ref={boxRef} className="relative flex h-full w-full items-center justify-center overflow-hidden">
       {waiting && (
         <img
           src={placeholder}
@@ -212,7 +213,8 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
           aria-hidden
           draggable={false}
           // 흐림 효과는 가장자리가 번져 반투명한 네모가 보여서 쓰지 않는다 (받는 중은 아래 막대로 표시)
-          className="absolute inset-0 h-full w-full select-none object-contain"
+          // 받는 중에 꾹 눌러도 이 썸네일이 미리보기로 퍼지지 않게 터치를 통과시킨다
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
         />
       )}
       {/* 주소가 빈 img는 Safari가 깨진 그림 상자(얇은 테두리)로 그려서, 다 받기 전엔 빈 투명 이미지로 둔다 */}
@@ -225,7 +227,7 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
         loading={loading}
         draggable={false}
         onLoad={() => displaySrc && setLoadedSrc(displaySrc)}
-        className={`relative h-full w-full select-none object-contain ${waiting ? "opacity-0" : ""}`}
+        className={`relative max-h-full max-w-full select-none ${waiting ? "opacity-0" : ""}`}
       />
       {/* 선명한 사진을 받는 중: 사진 아래쪽 얇은 진행 막대 (전체 크기를 모르면 은은하게 깜빡임) */}
       {waiting && (
