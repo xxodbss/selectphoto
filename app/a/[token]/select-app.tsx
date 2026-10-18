@@ -85,17 +85,15 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
         />
       )}
 
-      {/* 마무리는 전체를 훑어보는 격자에서 */}
+      {/* 마무리는 전체를 훑어보는 격자에서: 사진 위에 떠 있는 버튼 */}
       {mode === "grid" && !ratings.locked && (
-        <div className="flex-none px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="w-full rounded-lg bg-zinc-100 py-3 font-semibold text-zinc-900"
-          >
-            다 골랐어요
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-30 -translate-x-1/2 rounded-full bg-zinc-100 px-7 py-3 font-semibold text-zinc-900 shadow-lg shadow-black/50"
+        >
+          다 골랐어요
+        </button>
       )}
 
       {sheetOpen && (

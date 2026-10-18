@@ -13,7 +13,8 @@ type Props = {
 export function Grid({ photos, ratings, onOpen }: Props) {
   return (
     // 격자만 안쪽에서 위아래로 스크롤 (사진이 많을 때 다 보려면 필요)
-    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-4">
+    // 아래 여백: 떠 있는 "다 골랐어요" 버튼이 마지막 줄 사진을 가리지 않게
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-28">
       <p className="px-3 pb-3 text-xs text-zinc-400">
         셀렉은 한 사람만 해 주세요. 사진을 누르면 크게 보고 별점을 매길 수 있어요.
       </p>
