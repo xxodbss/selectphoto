@@ -4,6 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SharedAlbum } from "./types";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
+
+export const SAVE_LABEL: Record<SaveState, string> = {
+  idle: "",
+  saving: "저장 중…",
+  saved: "저장됨",
+  error: "저장 실패 · 인터넷을 확인해 주세요",
+};
 export type RateResult = "ok" | "limit" | "locked";
 // toggle: 같은 별을 다시 누르면 취소(탭) / set: 그 점수로 정하기(슬라이드)
 export type RateMode = "toggle" | "set";

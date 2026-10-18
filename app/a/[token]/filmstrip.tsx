@@ -1,21 +1,14 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { photoUrl } from "@/lib/photos";
 import { PhotoStrip } from "./photo-strip";
 import { StarBar } from "./star-bar";
+import { SwipeViewer, type SwipeViewerHandle } from "./swipe-viewer";
 import type { SharedPhoto } from "./types";
-import type { RateMode, RatingsApi, SaveState } from "./use-ratings";
+import { useLimitNotice } from "./use-limit-notice";
+import { SAVE_LABEL, type RatingsApi } from "./use-ratings";
 import { ZoomableImage } from "./zoomable-image";
-
-const PRELOAD = 2; // 지금 사진 앞뒤로 큰 사진을 미리 불러올 장수
-
-const SAVE_LABEL: Record<SaveState, string> = {
-  idle: "",
-  saving: "저장 중…",
-  saved: "저장됨",
-  error: "저장 실패 · 인터넷을 확인해 주세요",
-};
 
 type Props = {
   photos: SharedPhoto[];
@@ -24,53 +17,16 @@ type Props = {
   ratings: RatingsApi;
   fiveStarLimit: number;
   keyboardEnabled: boolean; // 확인 창이 떠 있으면 끈다
+  onCompare: () => void; // 위아래 고정 비교 시작
 };
 
-export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit, keyboardEnabled }: Props) {
-  const mainRef = useRef<HTMLDivElement>(null);
-  const [zoomed, setZoomed] = useState(false);
+export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit, keyboardEnabled, onCompare }: Props) {
+  const viewerRef = useRef<SwipeViewerHandle>(null);
   const [fullscreen, setFullscreen] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { notice, rate } = useLimitNotice(ratings, fiveStarLimit);
 
   const photo = photos[index];
-
-  function handleRate(stars: number, mode: RateMode) {
-    if (ratings.rate(photo.id, stars, mode) === "limit") {
-      setNotice(`5점은 최대 ${fiveStarLimit}장까지예요.`);
-      clearTimeout(noticeTimer.current);
-      noticeTimer.current = setTimeout(() => setNotice(null), 3500);
-    }
-  }
-
-  // 격자에서 넘어왔을 때 고른 사진 위치로 바로 이동
-  useLayoutEffect(() => {
-    const main = mainRef.current;
-    if (main) main.scrollLeft = index * main.clientWidth;
-    // 처음 그릴 때만
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleScroll() {
-    const main = mainRef.current;
-    if (!main) return;
-    const next = Math.round(main.scrollLeft / main.clientWidth);
-    if (next !== index) onIndexChange(next);
-  }
-
-  function goTo(i: number) {
-    setZoomed(false); // 다른 사진으로 가면 확대가 풀린다
-    const main = mainRef.current;
-    main?.scrollTo({ left: i * main.clientWidth, behavior: "smooth" });
-  }
-
-  // 아래 띠를 훑거나 키보드로 넘길 때는 큰 사진을 애니메이션 없이 바로 바꾼다
-  function jumpTo(i: number) {
-    setZoomed(false);
-    onIndexChange(i);
-    const main = mainRef.current;
-    main?.scrollTo({ left: i * main.clientWidth, behavior: "instant" });
-  }
+  const jumpTo = (i: number) => viewerRef.current?.jumpTo(i);
 
   // PC 키보드: ← → 사진 이동, 1–5 별점(같은 숫자 다시 = 취소), 0 지우기, Esc 크게 보기 닫기
   useEffect(() => {
@@ -79,8 +35,8 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "ArrowRight" && index < photos.length - 1) jumpTo(index + 1);
       else if (e.key === "ArrowLeft" && index > 0) jumpTo(index - 1);
-      else if (e.key >= "1" && e.key <= "5") handleRate(Number(e.key), "toggle");
-      else if (e.key === "0") handleRate(0, "set");
+      else if (e.key >= "1" && e.key <= "5") rate(photo.id, Number(e.key), "toggle");
+      else if (e.key === "0") rate(photo.id, 0, "set");
       else if (e.key === "Escape" && fullscreen) setFullscreen(false);
       else return;
       e.preventDefault();
@@ -91,38 +47,15 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
 
   return (
     <>
-      {/* 큰 사진: 좌우로 밀면 한 장씩 맞춰 멈춘다 (확대한 동안은 넘어가지 않음) */}
-      <div
-        ref={mainRef}
-        onScroll={handleScroll}
-        className={`flex min-h-0 flex-1 snap-x snap-mandatory overflow-y-hidden overscroll-contain [scrollbar-width:none] ${
-          zoomed ? "overflow-x-hidden" : "overflow-x-auto"
-        }`}
-      >
-        {photos.map((photo, i) => {
-          const near = Math.abs(i - index) <= PRELOAD;
-          return (
-            <div key={photo.id} className="h-full w-full flex-none snap-center">
-              <ZoomableImage
-                src={photoUrl(near ? photo.storage_path : photo.thumb_path)}
-                alt={photo.filename}
-                loading={near ? "eager" : "lazy"}
-                swipeable
-                active={i === index}
-                onZoomChange={i === index ? setZoomed : undefined}
-              />
-            </div>
-          );
-        })}
-      </div>
+      <SwipeViewer ref={viewerRef} photos={photos} index={index} onIndexChange={onIndexChange} />
 
       <div className="relative flex-none pt-2">
         <StarBar
           value={ratings.ratings[photo.id] ?? 0}
           disabled={ratings.locked}
-          onRate={handleRate}
+          onRate={(stars, mode) => rate(photo.id, stars, mode)}
         />
-        {/* 가운데 글자가 오른쪽 확대 버튼과 겹치지 않게 양옆을 비운다 */}
+        {/* 가운데 글자가 양옆 동그라미 버튼과 겹치지 않게 양옆을 비운다 */}
         {notice ? (
           <p role="alert" className="px-14 py-1 text-center text-xs text-amber-400">
             {notice}
@@ -133,17 +66,17 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
             {SAVE_LABEL[ratings.saveState] && ` · ${SAVE_LABEL[ratings.saveState]}`}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => setFullscreen(true)}
-          className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-500 text-zinc-300"
-          aria-label="크게 보기"
-        >
+        {photos.length > 1 && (
+          <RoundButton side="left" label="다른 사진과 비교하기" onClick={onCompare}>
+            <CompareIcon />
+          </RoundButton>
+        )}
+        <RoundButton side="right" label="크게 보기" onClick={() => setFullscreen(true)}>
           <ExpandIcon />
-        </button>
+        </RoundButton>
       </div>
 
-      <PhotoStrip photos={photos} index={index} onScrub={jumpTo} onSelect={goTo} />
+      <PhotoStrip photos={photos} index={index} onScrub={jumpTo} onSelect={(i) => viewerRef.current?.goTo(i)} />
 
       {/* 크게 보기: 화면 전체에 띄우고, 두 손가락·두 번 탭으로 확대 */}
       {fullscreen && (
@@ -162,11 +95,47 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, fiveStarLimit
   );
 }
 
+// 별점 줄 양옆의 작은 동그라미 버튼
+function RoundButton({
+  side,
+  label,
+  onClick,
+  children,
+}: {
+  side: "left" | "right";
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`absolute top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-500 text-zinc-300 ${
+        side === "left" ? "left-4" : "right-4"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 // 네 모서리 화살표 (크게 보기)
 function ExpandIcon() {
   return (
     <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
       <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// 위아래 두 칸 (비교)
+function CompareIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <rect x="2.5" y="2" width="11" height="5" rx="1" />
+      <rect x="2.5" y="9" width="11" height="5" rx="1" />
     </svg>
   );
 }

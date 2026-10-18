@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CompareView } from "./compare-view";
 import { Filmstrip } from "./filmstrip";
 import { FinishSheet } from "./finish-sheet";
 import { Grid } from "./grid";
@@ -14,12 +15,20 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const ratings = useRatings(token, album);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
+  const [pinned, setPinned] = useState<number | null>(null); // 비교할 때 위에 고정한 사진
   const { photos } = album;
+  const comparing = pinned !== null && mode === "filmstrip";
 
   // 사진을 넘길 때마다 저장
   function changeIndex(i: number) {
     setIndex(i);
     ratings.flush();
+  }
+
+  // 비교 시작: 지금 사진을 위에 고정하고, 아래는 다음 사진(마지막이면 앞 사진)
+  function startCompare() {
+    setPinned(index);
+    changeIndex(index < photos.length - 1 ? index + 1 : index - 1);
   }
 
   if (photos.length === 0) {
@@ -38,7 +47,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
         {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 */}
         <header className="grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
           <span className="min-w-0 truncate text-sm">
-            {mode === "filmstrip" ? `${index + 1} / ${photos.length}` : album.title}
+            {comparing ? "비교 중" : mode === "filmstrip" ? `${index + 1} / ${photos.length}` : album.title}
           </span>
           <span
             className={`text-center text-sm ${
@@ -48,7 +57,15 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             ★5점 {ratings.fiveCount}/{album.five_star_limit}
           </span>
           {/* 필름스트립 → 격자는 버튼, 격자 → 필름스트립은 사진을 탭 */}
-          {mode === "filmstrip" ? (
+          {comparing ? (
+            <button
+              type="button"
+              onClick={() => setPinned(null)}
+              className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
+            >
+              닫기
+            </button>
+          ) : mode === "filmstrip" ? (
             <button
               type="button"
               onClick={() => setViewMode("grid")}
@@ -76,7 +93,19 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           </p>
         )}
 
-        {mode === "filmstrip" ? (
+        {comparing ? (
+          <CompareView
+            photos={photos}
+            pinned={pinned}
+            candidate={index}
+            onCandidateChange={changeIndex}
+            onPin={setPinned}
+            ratings={ratings}
+            fiveStarLimit={album.five_star_limit}
+            keyboardEnabled={!sheetOpen && !justFinished}
+            onClose={() => setPinned(null)}
+          />
+        ) : mode === "filmstrip" ? (
           <Filmstrip
             photos={photos}
             index={index}
@@ -84,6 +113,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             ratings={ratings}
             fiveStarLimit={album.five_star_limit}
             keyboardEnabled={!sheetOpen && !justFinished}
+            onCompare={startCompare}
           />
         ) : (
           <Grid
