@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 어도비 브릿지용 스크립트 (브라우저·Node 문법이 아님)
+    "public/bridge/**",
   ]),
 ]);
 

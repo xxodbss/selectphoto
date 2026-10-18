@@ -6,6 +6,7 @@ import { StatusBadge } from "../../status-badge";
 import { reopenAlbum } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
 import { PhotoManager } from "./photo-manager";
+import { ResultPanel } from "./result-panel";
 import { UploadPhotos } from "./upload-photos";
 
 export default function AlbumPage({ params }: PageProps<"/admin/albums/[id]">) {
@@ -38,12 +39,6 @@ async function AlbumDetail({ id }: { id: string }) {
     notFound();
   }
 
-  // 점수별 장수 (0 = 안 고름)
-  const counts = [5, 4, 3, 2, 1, 0].map((stars) => ({
-    stars,
-    count: album.photos.filter((p) => p.rating === stars).length,
-  }));
-
   return (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -66,17 +61,14 @@ async function AlbumDetail({ id }: { id: string }) {
       )}
 
       {album.photos.length > 0 && (
-        <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="font-semibold">모델이 고른 별점</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {counts
-              .map(({ stars, count }) => `${stars ? `★${stars}` : "안 고름"} ${count}장`)
-              .join(" · ")}
-          </p>
-          <p className="text-xs text-zinc-500">
-            모델이 고르는 중이면 새로고침해서 최신 별점을 볼 수 있어요.
-          </p>
-        </section>
+        <>
+          <ResultPanel title={album.title} photos={album.photos} />
+          {!album.submitted_at && (
+            <p className="-mt-3 text-xs text-zinc-500">
+              모델이 고르는 중이에요. 새로고침하면 최신 별점을 볼 수 있어요.
+            </p>
+          )}
+        </>
       )}
 
       {album.photos.length > 0 && <PhotoManager albumId={id} photos={album.photos} />}
