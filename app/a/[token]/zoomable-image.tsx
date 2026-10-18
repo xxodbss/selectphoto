@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- 미리 줄여 둔 사진을 그대로 쓴다 */
 import { useEffect, useRef, useState } from "react";
+import { useImageProgress } from "./use-image-progress";
 
 const MAX_SCALE = 5;
 const DOUBLE_TAP_SCALE = 2.5;
@@ -192,8 +193,12 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
     };
   }, [swipeable]);
 
-  // 큰 사진을 받는 동안 이미 받아 둔 썸네일을 먼저 깔아 둔다 (빈 화면 대신 흐릿한 사진)
-  const waiting = Boolean(placeholder) && placeholder !== src && loadedSrc !== src;
+  // 큰 사진을 받는 동안 이미 받아 둔 썸네일을 먼저 깔아 두고, 아래에 얇은 진행 막대를 보여준다
+  const needsLoad = Boolean(placeholder) && placeholder !== src;
+  const { url, progress, failed } = useImageProgress(src, needsLoad);
+  // 다 받은 사진을 그대로 띄운다 (받기에 실패하면 일반 방식으로)
+  const displaySrc = !needsLoad ? src : (url ?? (failed ? src : undefined));
+  const waiting = needsLoad && (displaySrc === undefined || loadedSrc !== displaySrc);
 
   return (
     <div ref={boxRef} className="relative h-full w-full overflow-hidden">
@@ -209,20 +214,21 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
       )}
       <img
         ref={imgRef}
-        src={src}
+        src={displaySrc}
         alt={alt}
         loading={loading}
         draggable={false}
-        onLoad={() => setLoadedSrc(src)}
+        onLoad={() => setLoadedSrc(displaySrc ?? null)}
         className={`relative h-full w-full select-none object-contain ${waiting ? "opacity-0" : ""}`}
       />
-      {/* 선명한 사진을 받는 중: 오른쪽 위에 작은 로딩 원 */}
+      {/* 선명한 사진을 받는 중: 사진 아래쪽 얇은 진행 막대 (전체 크기를 모르면 은은하게 깜빡임) */}
       {waiting && (
-        <span
-          role="status"
-          aria-label="사진 불러오는 중"
-          className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"
-        />
+        <div role="progressbar" aria-label="사진 불러오는 중" className="absolute inset-x-0 bottom-0 h-0.5 bg-white/10">
+          <div
+            className={`h-full bg-white/80 transition-[width] duration-150 ${progress === null ? "w-full animate-pulse" : ""}`}
+            style={progress === null ? undefined : { width: `${Math.round(progress * 100)}%` }}
+          />
+        </div>
       )}
     </div>
   );
