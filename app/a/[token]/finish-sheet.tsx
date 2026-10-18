@@ -30,10 +30,14 @@ export function FinishSheet({ ratings, fiveStarLimit, onClose, onDone }: Props) 
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end bg-black/50" onClick={busy ? undefined : onClose}>
+    // 휴대폰은 아래에서 올라오는 창, PC는 가운데 창
+    <div
+      className="fixed inset-0 z-40 flex items-end bg-black/50 lg:items-center lg:justify-center"
+      onClick={busy ? undefined : onClose}
+    >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full flex-col gap-3 rounded-t-2xl bg-zinc-800 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        className="flex w-full flex-col gap-3 rounded-t-2xl bg-zinc-800 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-zinc-100 lg:max-w-md lg:rounded-2xl lg:pb-5"
       >
         <h2 className="text-lg font-bold">셀렉을 마칠까요?</h2>
 
