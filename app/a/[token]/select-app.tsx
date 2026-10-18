@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Filmstrip } from "./filmstrip";
+import { FinishSheet } from "./finish-sheet";
 import { Grid } from "./grid";
 import type { SharedAlbum } from "./types";
 import { useRatings } from "./use-ratings";
@@ -16,6 +17,8 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const mode = useViewMode();
   const [index, setIndex] = useState(0);
   const ratings = useRatings(token, album);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [justFinished, setJustFinished] = useState(false);
   const { photos } = album;
 
   const nextMode = VIEW_MODES[(VIEW_MODES.indexOf(mode) + 1) % VIEW_MODES.length];
@@ -59,7 +62,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
 
       {ratings.locked && (
         <p className="flex-none bg-emerald-900/60 px-4 py-2 text-center text-sm">
-          제출을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.
+          셀렉을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.
         </p>
       )}
 
@@ -80,6 +83,44 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             setViewMode("filmstrip");
           }}
         />
+      )}
+
+      {!ratings.locked && (
+        <div className="flex-none px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="w-full rounded-lg bg-zinc-100 py-3 font-semibold text-zinc-900"
+          >
+            다 골랐어요
+          </button>
+        </div>
+      )}
+
+      {sheetOpen && (
+        <FinishSheet
+          ratings={ratings}
+          fiveStarLimit={album.five_star_limit}
+          onClose={() => setSheetOpen(false)}
+          onDone={() => {
+            setSheetOpen(false);
+            setJustFinished(true);
+          }}
+        />
+      )}
+
+      {justFinished && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bridge px-6 text-center">
+          <h2 className="text-xl font-bold">셀렉을 마쳤어요</h2>
+          <p className="text-zinc-300">작가님께 카톡으로 다 골랐다고 알려 주세요.</p>
+          <button
+            type="button"
+            onClick={() => setJustFinished(false)}
+            className="rounded-lg border border-zinc-500 px-5 py-3 text-sm"
+          >
+            고른 사진 다시 보기
+          </button>
+        </div>
       )}
     </main>
   );
