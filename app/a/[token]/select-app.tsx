@@ -35,12 +35,13 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
     // PC에서도 휴대폰 화면을 가운데에 휴대폰 폭으로 보여준다
     <div className="fixed inset-0 flex justify-center overscroll-none bg-bridge text-zinc-100">
       <main className="flex h-full w-full max-w-[480px] flex-col lg:border-x lg:border-black/30">
-        <header className="flex h-12 flex-none items-center justify-between gap-3 px-4">
+        {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 */}
+        <header className="grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4">
           <span className="min-w-0 truncate text-sm">
             {mode === "filmstrip" ? `${index + 1} / ${photos.length}` : album.title}
           </span>
           <span
-            className={`flex-none text-sm ${
+            className={`text-center text-sm ${
               ratings.fiveCount >= album.five_star_limit ? "text-amber-400" : ""
             }`}
           >
@@ -51,7 +52,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className="flex-none rounded-full border border-zinc-500 px-3 py-1 text-xs"
+              className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
             >
               격자로 보기
             </button>
@@ -61,7 +62,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="flex-none rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
+                className="justify-self-end rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
               >
                 완료
               </button>
