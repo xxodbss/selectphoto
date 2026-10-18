@@ -6,12 +6,7 @@ import { FinishSheet } from "./finish-sheet";
 import { Grid } from "./grid";
 import type { SharedAlbum } from "./types";
 import { useRatings } from "./use-ratings";
-import { setViewMode, useViewMode, VIEW_MODES, type ViewMode } from "./view-mode";
-
-const MODE_LABEL: Record<ViewMode, string> = {
-  filmstrip: "필름스트립",
-  grid: "격자",
-};
+import { setViewMode, useViewMode } from "./view-mode";
 
 export function SelectApp({ token, album }: { token: string; album: SharedAlbum }) {
   const mode = useViewMode();
@@ -20,8 +15,6 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
   const { photos } = album;
-
-  const nextMode = VIEW_MODES[(VIEW_MODES.indexOf(mode) + 1) % VIEW_MODES.length];
 
   // 사진을 넘길 때마다 저장
   function changeIndex(i: number) {
@@ -53,25 +46,27 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           >
             ★5점 {ratings.fiveCount}/{album.five_star_limit}
           </span>
-          <div className="flex flex-none gap-2">
+          {/* 필름스트립 → 격자는 버튼, 격자 → 필름스트립은 사진을 탭 */}
+          {mode === "filmstrip" ? (
             <button
               type="button"
-              onClick={() => setViewMode(nextMode)}
-              className="rounded-full border border-zinc-500 px-3 py-1 text-xs"
+              onClick={() => setViewMode("grid")}
+              className="flex-none rounded-full border border-zinc-500 px-3 py-1 text-xs"
             >
-              {MODE_LABEL[nextMode]}로 보기
+              격자로 보기
             </button>
-            {/* 마무리는 전체를 훑어보는 격자에서 */}
-            {mode === "grid" && !ratings.locked && (
+          ) : (
+            // 마무리는 전체를 훑어보는 격자에서
+            !ratings.locked && (
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
+                className="flex-none rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
               >
                 완료
               </button>
-            )}
-          </div>
+            )
+          )}
         </header>
 
         {ratings.locked && (
