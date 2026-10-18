@@ -85,7 +85,8 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
         />
       )}
 
-      {!ratings.locked && (
+      {/* 마무리는 전체를 훑어보는 격자에서 */}
+      {mode === "grid" && !ratings.locked && (
         <div className="flex-none px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
           <button
             type="button"

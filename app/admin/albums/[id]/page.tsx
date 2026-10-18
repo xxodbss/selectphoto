@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAuthor } from "@/lib/auth";
 import { StatusBadge } from "../../status-badge";
-import { photoUrl } from "@/lib/photos";
+import { reopenAlbum } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
+import { PhotoManager } from "./photo-manager";
 import { UploadPhotos } from "./upload-photos";
 
 export default function AlbumPage({ params }: PageProps<"/admin/albums/[id]">) {
@@ -53,7 +54,16 @@ async function AlbumDetail({ id }: { id: string }) {
         사진 {album.photos.length}장 · 5점 최대 {album.five_star_limit}장
       </p>
       <CopyLinkButton token={album.share_token} />
-      {!album.submitted_at && <UploadPhotos albumId={id} />}
+      {album.submitted_at ? (
+        // 모델이 실수로 마쳤거나 다시 고르고 싶을 때 (별점은 그대로 남음)
+        <form action={reopenAlbum.bind(null, id)}>
+          <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm dark:border-zinc-700">
+            셀렉 다시 열기
+          </button>
+        </form>
+      ) : (
+        <UploadPhotos albumId={id} />
+      )}
 
       {album.photos.length > 0 && (
         <section className="flex flex-col gap-1 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -69,32 +79,7 @@ async function AlbumDetail({ id }: { id: string }) {
         </section>
       )}
 
-      {album.photos.length > 0 && (
-        <ul className="grid grid-cols-3 gap-2">
-          {album.photos.map((photo, i) => (
-            <li key={photo.id} className="flex flex-col gap-1">
-              <div className="relative">
-                {/* Vercel 이미지 최적화 대신 미리 줄여 둔 썸네일을 그대로 쓴다 */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoUrl(photo.thumb_path)}
-                  alt={photo.filename}
-                  loading="lazy"
-                  className="aspect-square w-full rounded-md bg-zinc-100 object-cover dark:bg-zinc-800"
-                />
-                {photo.rating > 0 && (
-                  <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-100">
-                    ★{photo.rating}
-                  </span>
-                )}
-              </div>
-              <span className="truncate text-xs text-zinc-500">
-                {i + 1}. {photo.filename}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {album.photos.length > 0 && <PhotoManager albumId={id} photos={album.photos} />}
     </>
   );
 }
