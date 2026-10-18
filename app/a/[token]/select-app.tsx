@@ -68,8 +68,14 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
       <main className={`flex w-full max-w-[480px] flex-col lg:border-x lg:border-black/30 ${pageScroll ? "" : "h-full"}`}>
         {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 (격자에서는 맨 위에 붙어 있음) */}
         <header
+          // 격자에서 막대를 탭하면 맨 위로 (버튼을 누른 건 제외)
+          onClick={(e) => {
+            if (pageScroll && !(e.target as HTMLElement).closest("button")) {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           className={`grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 ${
-            pageScroll ? "sticky top-0 z-10 bg-bridge" : ""
+            pageScroll ? "sticky top-0 z-10 cursor-pointer bg-bridge" : ""
           }`}
         >
           <span className="min-w-0 truncate text-sm">
