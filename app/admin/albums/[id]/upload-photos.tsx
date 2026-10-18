@@ -3,7 +3,7 @@
 import exifr from "exifr";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { extensionOf, makePreviews } from "@/lib/image";
+import { makePreviews } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 
 const PARALLEL = 3; // 동시에 처리할 장수
@@ -43,18 +43,14 @@ export function UploadPhotos({ albumId }: { albumId: string }) {
     const { full, thumb } = await makePreviews(file);
 
     const id = crypto.randomUUID();
-    const storagePath = `${albumId}/${id}.${extensionOf(full)}`;
-    const thumbPath = `${albumId}/${id}_thumb.${extensionOf(thumb)}`;
+    const storagePath = `${albumId}/${id}.jpg`;
+    const thumbPath = `${albumId}/${id}_thumb.jpg`;
     // 파일 이름이 무작위라 내용이 바뀌지 않으므로 오래 캐시해도 된다
-    const cacheControl = "31536000";
+    const options = { contentType: "image/jpeg", cacheControl: "31536000" };
 
-    const up1 = await supabase.storage
-      .from("photos")
-      .upload(storagePath, full, { contentType: full.type, cacheControl });
+    const up1 = await supabase.storage.from("photos").upload(storagePath, full, options);
     if (up1.error) throw up1.error;
-    const up2 = await supabase.storage
-      .from("photos")
-      .upload(thumbPath, thumb, { contentType: thumb.type, cacheControl });
+    const up2 = await supabase.storage.from("photos").upload(thumbPath, thumb, options);
     if (up2.error) throw up2.error;
 
     const { error } = await supabase.from("photos").insert({
