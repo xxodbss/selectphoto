@@ -9,6 +9,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-pretendard), system-ui, sans-serif;
+  /* 모델 화면 배경: 어도비 브릿지와 같은 회색 */
+  --color-bridge: rgb(50 50 50);
 }
 
 @media (prefers-color-scheme: dark) {
