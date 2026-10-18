@@ -2,25 +2,11 @@
 
 import { useSyncExternalStore } from "react";
 
-// 모델이 고른 보기 방식을 그 기기에 기억한다 (저장이 막힌 브라우저면 이번 방문 동안만)
-export const VIEW_MODES = ["filmstrip", "grid"] as const;
-export type ViewMode = (typeof VIEW_MODES)[number];
+// 보기 방식: 링크로 들어오면 항상 격자로 시작 (기기에 기억하지 않음)
+export type ViewMode = "filmstrip" | "grid";
 
-const KEY = "selectphoto:view-mode";
 const listeners = new Set<() => void>();
-let memoryMode: ViewMode = "filmstrip";
-
-function isViewMode(value: unknown): value is ViewMode {
-  return VIEW_MODES.includes(value as ViewMode);
-}
-
-function getSnapshot(): ViewMode {
-  try {
-    const stored = localStorage.getItem(KEY);
-    if (isViewMode(stored)) return stored;
-  } catch {}
-  return memoryMode;
-}
+let currentMode: ViewMode = "grid";
 
 function subscribe(callback: () => void) {
   listeners.add(callback);
@@ -30,14 +16,14 @@ function subscribe(callback: () => void) {
 }
 
 export function setViewMode(mode: ViewMode) {
-  memoryMode = mode;
-  try {
-    localStorage.setItem(KEY, mode);
-  } catch {}
+  currentMode = mode;
   listeners.forEach((listener) => listener());
 }
 
 export function useViewMode() {
-  // 서버에서 그릴 때는 기본값(필름스트립)
-  return useSyncExternalStore(subscribe, getSnapshot, () => "filmstrip" as const);
+  return useSyncExternalStore(
+    subscribe,
+    () => currentMode,
+    () => "grid" as const,
+  );
 }
