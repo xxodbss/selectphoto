@@ -50,6 +50,10 @@ export function Grid({ photos, ratings, currentIndex, onOpen }: Props) {
                   loading="lazy"
                   className="h-full w-full object-cover"
                 />
+                {/* 사진 번호 (필름스트립의 "37 / 505"와 같은 번호) */}
+                <span className="absolute left-1 top-1 rounded bg-black/50 px-1 py-0.5 text-[10px] leading-none tabular-nums text-zinc-300">
+                  {i + 1}
+                </span>
                 {rating > 0 && (
                   <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">
                     ★{rating}
