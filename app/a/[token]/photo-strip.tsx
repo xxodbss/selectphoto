@@ -25,9 +25,12 @@ export function PhotoStrip({ photos, index, onScrub, onSelect }: Props) {
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [scrubbing, setScrubbing] = useState(false);
 
-  // 큰 사진을 넘기면 띠도 따라가서 지금 사진이 가운데 온다
+  // 큰 사진을 넘기면 띠도 따라가서 지금 사진이 가운데 온다 (처음 열릴 때는 바로 그 위치에)
+  const placed = useRef(false);
   useEffect(() => {
-    if (!scrubbing) stripRef.current?.scrollTo({ left: index * PITCH, behavior: "smooth" });
+    if (scrubbing) return;
+    stripRef.current?.scrollTo({ left: index * PITCH, behavior: placed.current ? "smooth" : "instant" });
+    placed.current = true;
   }, [scrubbing, index]);
 
   function startScrub() {

@@ -5,13 +5,15 @@ import { CompareView } from "./compare-view";
 import { Filmstrip } from "./filmstrip";
 import { FinishSheet } from "./finish-sheet";
 import { Grid } from "./grid";
+import { readLastPhoto, saveLastPhoto, useHydrated } from "./last-viewed";
 import type { SharedAlbum } from "./types";
 import { useRatings } from "./use-ratings";
 import { setViewMode, useViewMode } from "./view-mode";
 
 export function SelectApp({ token, album }: { token: string; album: SharedAlbum }) {
   const mode = useViewMode();
-  const [index, setIndex] = useState(0);
+  const hydrated = useHydrated();
+  const [chosen, setChosen] = useState<number | null>(null);
   const ratings = useRatings(token, album);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
@@ -19,9 +21,14 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const { photos } = album;
   const comparing = pinned !== null && mode === "filmstrip";
 
-  // 사진을 넘길 때마다 저장
+  // 처음엔 이 기기에서 마지막에 보던 사진(없거나 지워졌으면 첫 사진), 그 뒤로는 고른 사진
+  const index =
+    chosen ?? (hydrated ? Math.max(0, photos.findIndex((p) => p.id === readLastPhoto(token))) : 0);
+
+  // 사진을 넘길 때마다 별점 저장 + 보던 사진 기억
   function changeIndex(i: number) {
-    setIndex(i);
+    setChosen(i);
+    saveLastPhoto(token, photos[i].id);
     ratings.flush();
   }
 
@@ -35,6 +42,15 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
     return (
       <main className="fixed inset-0 flex items-center justify-center bg-bridge px-4 text-center text-zinc-300">
         아직 사진이 없어요. 작가님이 사진을 올리면 다시 열어 주세요.
+      </main>
+    );
+  }
+
+  // 기억해 둔 사진은 휴대폰에서만 알 수 있어서, 화면이 준비된 뒤에 그린다
+  if (!hydrated) {
+    return (
+      <main className="fixed inset-0 flex items-center justify-center bg-bridge text-sm text-zinc-400">
+        사진을 불러오는 중…
       </main>
     );
   }
@@ -121,7 +137,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             ratings={ratings.ratings}
             currentIndex={index}
             onOpen={(i) => {
-              setIndex(i);
+              changeIndex(i);
               setViewMode("filmstrip");
             }}
           />
