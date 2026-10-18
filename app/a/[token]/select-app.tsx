@@ -5,7 +5,9 @@ import { CompareView } from "./compare-view";
 import { Filmstrip } from "./filmstrip";
 import { FinishSheet } from "./finish-sheet";
 import { Grid } from "./grid";
+import { FilterChips } from "./filter-chips";
 import { readLastPhoto, saveLastPhoto, useHydrated } from "./last-viewed";
+import { filterLabel, matchesFilter, type RatingFilter } from "./rating-filter";
 import type { SharedAlbum } from "./types";
 import { useRatings } from "./use-ratings";
 import { setViewMode, useViewMode } from "./view-mode";
@@ -18,10 +20,13 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
   const [pinned, setPinned] = useState<number | null>(null); // 비교할 때 위에 고정한 사진
-  // 셀렉을 마친 앨범은 별점을 준 사진만 보여준다 (전체 보기로 바꿀 수 있음)
-  const [onlyRated, setOnlyRated] = useState(Boolean(album.submitted_at));
   const { photos } = album;
-  const shown = onlyRated ? photos.filter((p) => (ratings.ratings[p.id] ?? 0) > 0) : photos;
+  // 별점 골라 보기 (셀렉을 마친 앨범은 '고른 사진'으로 시작)
+  // 목록은 버튼을 누르거나 격자로 돌아올 때만 다시 정리한다 (보는 중에 별점을 바꿔도 사진이 갑자기 사라지지 않게)
+  const [filter, setFilter] = useState<RatingFilter>(album.submitted_at ? "rated" : "all");
+  const [listIds, setListIds] = useState(() => pickIds(album.submitted_at ? "rated" : "all", ratings.ratings));
+  const [listVersion, setListVersion] = useState(0);
+  const shown = filter === "all" ? photos : photos.filter((p) => listIds.has(p.id));
   // 고른 사진만 볼 때도 격자에는 전체에서의 원래 번호를 보여준다
   const photoNumbers = new Map(photos.map((p, i) => [p.id, i + 1]));
   const comparing = pinned !== null && mode === "filmstrip";
@@ -44,9 +49,23 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
     changeIndex(index < shown.length - 1 ? index + 1 : index - 1);
   }
 
-  function toggleOnlyRated() {
+  function pickIds(f: RatingFilter, current: Record<string, number>) {
+    return new Set(photos.filter((p) => matchesFilter(current[p.id] ?? 0, f)).map((p) => p.id));
+  }
+
+  // 별점 골라 보기: 목록을 지금 별점 기준으로 다시 정리
+  function applyFilter(f: RatingFilter) {
     setPinned(null);
-    setOnlyRated(!onlyRated);
+    setFilter(f);
+    setListIds(pickIds(f, ratings.ratings));
+    setListVersion((v) => v + 1);
+    // 목록이 바뀌면 맨 위부터 (보던 사진이 목록에 있으면 격자가 그 사진을 가운데로 옮김)
+    window.scrollTo({ top: 0 });
+  }
+
+  function openGrid() {
+    setViewMode("grid");
+    applyFilter(filter);
   }
 
   if (photos.length === 0) {
@@ -76,85 +95,86 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
       }`}
     >
       <main className={`flex w-full max-w-[480px] flex-col lg:border-x lg:border-black/30 ${pageScroll ? "" : "h-full"}`}>
-        {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 (격자에서는 맨 위에 붙어 있음) */}
-        <header
-          // 격자에서 막대를 탭하면 맨 위로 (버튼을 누른 건 제외)
-          onClick={(e) => {
-            if (pageScroll && !(e.target as HTMLElement).closest("button")) {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
-          className={`grid h-12 flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 ${
-            pageScroll ? "sticky top-0 z-10 cursor-pointer bg-bridge" : ""
-          }`}
-        >
-          <span className="min-w-0 truncate text-sm">
-            {comparing
-              ? "비교 중"
-              : mode === "filmstrip"
-                ? shown.length
-                  ? // 고른 사진만 볼 때는 원래 번호도 같이 (예: 37번 · 3 / 10)
-                    `${onlyRated ? `${photoNumbers.get(shown[index].id)}번 · ` : ""}${index + 1} / ${shown.length}`
-                  : ""
-                : album.title}
-          </span>
-          <span
-            className={`text-center text-sm ${
-              ratings.fiveCount >= album.five_star_limit ? "text-amber-400" : ""
-            }`}
+        {/* 격자에서는 위쪽 막대와 별점 골라 보기 줄이 함께 맨 위에 붙어 있다 */}
+        <div className={pageScroll ? "sticky top-0 z-10 bg-bridge" : "flex-none"}>
+          {/* 왼쪽·가운데·오른쪽 세 칸: 5점 개수가 항상 정가운데 오게 */}
+          <header
+            // 격자에서 막대를 탭하면 맨 위로 (버튼을 누른 건 제외)
+            onClick={(e) => {
+              if (pageScroll && !(e.target as HTMLElement).closest("button")) {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            className={`grid h-12 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 ${pageScroll ? "cursor-pointer" : ""}`}
           >
-            ★5점 {ratings.fiveCount}/{album.five_star_limit}
-          </span>
-          {/* 필름스트립 → 격자는 버튼, 격자 → 필름스트립은 사진을 탭 */}
-          {comparing ? (
-            <button
-              type="button"
-              onClick={() => setPinned(null)}
-              className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
+            <span className="min-w-0 truncate text-sm">
+              {comparing
+                ? "비교 중"
+                : mode === "filmstrip"
+                  ? shown.length
+                    ? // 골라 볼 때는 원래 번호도 같이 (예: 37번 · 3 / 10)
+                      `${filter !== "all" ? `${photoNumbers.get(shown[index].id)}번 · ` : ""}${index + 1} / ${shown.length}`
+                    : ""
+                  : album.title}
+            </span>
+            <span
+              className={`text-center text-sm ${
+                ratings.fiveCount >= album.five_star_limit ? "text-amber-400" : ""
+              }`}
             >
-              닫기
-            </button>
-          ) : mode === "filmstrip" ? (
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
-            >
-              격자로 보기
-            </button>
-          ) : (
-            // 마무리는 전체를 훑어보는 격자에서
-            !ratings.locked && (
+              ★5점 {ratings.fiveCount}/{album.five_star_limit}
+            </span>
+            {/* 필름스트립 → 격자는 버튼, 격자 → 필름스트립은 사진을 탭 */}
+            {comparing ? (
               <button
                 type="button"
-                onClick={() => setSheetOpen(true)}
-                className="justify-self-end rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
+                onClick={() => setPinned(null)}
+                className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
               >
-                완료
+                닫기
               </button>
-            )
+            ) : mode === "filmstrip" ? (
+              <button
+                type="button"
+                onClick={openGrid}
+                className="justify-self-end rounded-full border border-zinc-500 px-3 py-1 text-xs"
+              >
+                격자로 보기
+              </button>
+            ) : (
+              // 마무리는 전체를 훑어보는 격자에서
+              !ratings.locked && (
+                <button
+                  type="button"
+                  onClick={() => setSheetOpen(true)}
+                  className="justify-self-end rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-900"
+                >
+                  완료
+                </button>
+              )
+            )}
+          </header>
+          {pageScroll && (
+            <FilterChips photos={photos} ratings={ratings.ratings} value={filter} onChange={applyFilter} />
           )}
-        </header>
+        </div>
 
         {ratings.locked && (
-          <div className="flex flex-none items-center justify-between gap-3 bg-emerald-900/60 px-4 py-2 text-sm">
-            <span>셀렉을 마친 앨범이에요</span>
-            <button type="button" onClick={toggleOnlyRated} className="flex-none underline">
-              {onlyRated ? "전체 보기" : "고른 사진만"}
-            </button>
-          </div>
+          <p className="flex-none bg-emerald-900/60 px-4 py-2 text-center text-sm">
+            셀렉을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.
+          </p>
         )}
 
         {shown.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-zinc-300">
-            <p>고른 사진이 없어요.</p>
-            <button type="button" onClick={toggleOnlyRated} className="rounded-full border border-zinc-500 px-4 py-2 text-sm">
+            <p>{filterLabel(filter)} 사진이 없어요.</p>
+            <button type="button" onClick={() => applyFilter("all")} className="rounded-full border border-zinc-500 px-4 py-2 text-sm">
               전체 보기
             </button>
           </div>
         ) : comparing ? (
           <CompareView
-            key={String(onlyRated)}
+            key={listVersion}
             photos={shown}
             pinned={pinned}
             candidate={index}
@@ -166,7 +186,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           />
         ) : mode === "filmstrip" ? (
           <Filmstrip
-            key={String(onlyRated)}
+            key={listVersion}
             photos={shown}
             index={index}
             onIndexChange={changeIndex}
@@ -176,10 +196,10 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           />
         ) : (
           <Grid
-            key={String(onlyRated)}
+            key={listVersion}
             photos={shown}
             photoNumbers={photoNumbers}
-            hint={`${onlyRated ? "고른 사진" : "전체"} ${shown.length}장 · 사진을 누르면 ${
+            hint={`${filterLabel(filter)} ${shown.length}장 · 사진을 누르면 ${
               ratings.locked ? "크게 볼 수 있어요." : "크게 보고 별점을 매길 수 있어요."
             }`}
             ratings={ratings.ratings}
@@ -213,7 +233,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             type="button"
             onClick={() => {
               setJustFinished(false);
-              setOnlyRated(true);
+              applyFilter("rated");
             }}
             className="rounded-lg border border-zinc-500 px-5 py-3 text-sm"
           >
