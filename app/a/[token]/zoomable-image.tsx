@@ -4,6 +4,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useImageProgress } from "./use-image-progress";
 
+// 1×1 투명 GIF: 큰 사진을 받기 전 img 자리를 비워 둘 때 쓴다
+const EMPTY_IMAGE = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 const MAX_SCALE = 5;
 const DOUBLE_TAP_SCALE = 2.5;
 const DOUBLE_TAP_MS = 300;
@@ -208,17 +211,18 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
           alt=""
           aria-hidden
           draggable={false}
-          // 아직 받는 중인 걸 알 수 있게 살짝 흐리게
-          className="absolute inset-0 h-full w-full select-none object-contain blur-[1.5px]"
+          // 흐림 효과는 가장자리가 번져 반투명한 네모가 보여서 쓰지 않는다 (받는 중은 아래 막대로 표시)
+          className="absolute inset-0 h-full w-full select-none object-contain"
         />
       )}
+      {/* 주소가 빈 img는 Safari가 깨진 그림 상자(얇은 테두리)로 그려서, 다 받기 전엔 빈 투명 이미지로 둔다 */}
       <img
         ref={imgRef}
-        src={displaySrc}
-        alt={alt}
+        src={displaySrc ?? EMPTY_IMAGE}
+        alt={displaySrc ? alt : ""}
         loading={loading}
         draggable={false}
-        onLoad={() => setLoadedSrc(displaySrc ?? null)}
+        onLoad={() => displaySrc && setLoadedSrc(displaySrc)}
         className={`relative h-full w-full select-none object-contain ${waiting ? "opacity-0" : ""}`}
       />
       {/* 선명한 사진을 받는 중: 사진 아래쪽 얇은 진행 막대 (전체 크기를 모르면 은은하게 깜빡임) */}
