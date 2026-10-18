@@ -22,6 +22,8 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
   const [onlyRated, setOnlyRated] = useState(Boolean(album.submitted_at));
   const { photos } = album;
   const shown = onlyRated ? photos.filter((p) => (ratings.ratings[p.id] ?? 0) > 0) : photos;
+  // 고른 사진만 볼 때도 격자에는 전체에서의 원래 번호를 보여준다
+  const photoNumbers = new Map(photos.map((p, i) => [p.id, i + 1]));
   const comparing = pinned !== null && mode === "filmstrip";
   const pageScroll = mode === "grid";
 
@@ -135,7 +137,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
 
         {ratings.locked && (
           <div className="flex flex-none items-center justify-between gap-3 bg-emerald-900/60 px-4 py-2 text-sm">
-            <span>셀렉을 마친 앨범이에요. 별점은 더 바꿀 수 없어요.</span>
+            <span>셀렉을 마친 앨범이에요</span>
             <button type="button" onClick={toggleOnlyRated} className="flex-none underline">
               {onlyRated ? "전체 보기" : "고른 사진만"}
             </button>
@@ -175,6 +177,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
           <Grid
             key={String(onlyRated)}
             photos={shown}
+            photoNumbers={photoNumbers}
             hint={`${onlyRated ? "고른 사진" : "전체"} ${shown.length}장 · 사진을 누르면 ${
               ratings.locked ? "크게 볼 수 있어요." : "크게 보고 별점을 매길 수 있어요."
             }`}

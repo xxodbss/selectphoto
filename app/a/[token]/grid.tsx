@@ -10,10 +10,11 @@ type Props = {
   ratings: Record<string, number>;
   currentIndex: number; // 필름스트립에서 보던 사진
   hint: string; // 맨 위 안내 (예: "전체 505장 · 사진을 누르면 …")
+  photoNumbers: Map<string, number>; // 전체에서의 원래 번호
   onOpen: (index: number) => void;
 };
 
-export function Grid({ photos, ratings, currentIndex, hint, onOpen }: Props) {
+export function Grid({ photos, ratings, currentIndex, hint, photoNumbers, onOpen }: Props) {
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   // 격자로 돌아오면 보던 사진이 가운데 오게 (처음 그릴 때만)
@@ -25,7 +26,8 @@ export function Grid({ photos, ratings, currentIndex, hint, onOpen }: Props) {
   return (
     // 페이지 자체가 스크롤된다 (아이폰 상단 누르면 맨 위로)
     <div className="px-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <p className="px-3 pb-3 text-xs text-zinc-400">
+      {/* 위아래 여백을 같게: 위쪽 막대 아래든 초록 띠 아래든 붙어 보이지 않게 */}
+      <p className="px-3 py-3 text-xs text-zinc-400">
         {hint}
       </p>
       <ul className="grid grid-cols-3 gap-1">
@@ -51,9 +53,9 @@ export function Grid({ photos, ratings, currentIndex, hint, onOpen }: Props) {
                   loading="lazy"
                   className="h-full w-full object-cover"
                 />
-                {/* 사진 번호 (필름스트립의 "37 / 505"와 같은 번호) */}
+                {/* 전체에서의 원래 사진 번호 */}
                 <span className="absolute left-1 top-1 rounded bg-black/50 px-1 py-0.5 text-[10px] leading-none tabular-nums text-zinc-300">
-                  {i + 1}
+                  {photoNumbers.get(photo.id) ?? i + 1}
                 </span>
                 {rating > 0 && (
                   <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">
