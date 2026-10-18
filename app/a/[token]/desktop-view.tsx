@@ -102,6 +102,7 @@ export function DesktopView({ album, index, onIndexChange, mode, modeButton, rat
             <Grid
               photos={photos}
               ratings={ratings.ratings}
+              currentIndex={index}
               onOpen={(i) => {
                 onIndexChange(i);
                 setViewMode("filmstrip");

@@ -99,6 +99,7 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             <Grid
               photos={photos}
               ratings={ratings.ratings}
+              currentIndex={index}
               onOpen={(i) => {
                 setIndex(i);
                 setViewMode("filmstrip");
