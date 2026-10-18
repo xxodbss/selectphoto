@@ -22,7 +22,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
+    // 브라우저 확장(예: Zotero)이 <html>에 속성을 덧붙여도 경고하지 않게 (이 태그에만 적용)
+    <html lang="ko" className={`${pretendard.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
