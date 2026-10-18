@@ -68,7 +68,12 @@ export function CompareView({
       <section className="flex min-h-0 flex-1 flex-col border-b border-black/40">
         <div className="relative min-h-0 flex-1">
           <div className="absolute inset-0">
-            <ZoomableImage key={pinnedPhoto.id} src={photoUrl(pinnedPhoto.storage_path)} alt={pinnedPhoto.filename} />
+            <ZoomableImage
+              key={pinnedPhoto.id}
+              src={photoUrl(pinnedPhoto.storage_path)}
+              placeholder={photoUrl(pinnedPhoto.thumb_path)}
+              alt={pinnedPhoto.filename}
+            />
           </div>
           <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-xs">고정</span>
         </div>

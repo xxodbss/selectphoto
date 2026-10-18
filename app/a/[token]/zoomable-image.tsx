@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- 미리 줄여 둔 사진을 그대로 쓴다 */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const MAX_SCALE = 5;
 const DOUBLE_TAP_SCALE = 2.5;
@@ -12,6 +12,8 @@ type Point = { x: number; y: number };
 type Props = {
   src: string;
   alt: string;
+  // src를 받는 동안 대신 보여줄 작은 사진 (보통 썸네일)
+  placeholder?: string;
   loading?: "eager" | "lazy";
   // true면 원래 크기일 때 좌우 밀기를 브라우저(사진 넘기기)에 맡긴다
   swipeable?: boolean;
@@ -21,7 +23,8 @@ type Props = {
 };
 
 // 두 손가락 확대, 확대 중 한 손가락 이동, 두 번 탭 확대/원래대로
-export function ZoomableImage({ src, alt, loading, swipeable = false, active = true, onZoomChange }: Props) {
+export function ZoomableImage({ src, alt, placeholder, loading, swipeable = false, active = true, onZoomChange }: Props) {
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const onZoomChangeRef = useRef(onZoomChange);
@@ -189,15 +192,28 @@ export function ZoomableImage({ src, alt, loading, swipeable = false, active = t
     };
   }, [swipeable]);
 
+  // 큰 사진을 받는 동안 이미 받아 둔 썸네일을 먼저 깔아 둔다 (빈 화면 대신 흐릿한 사진)
+  const waiting = Boolean(placeholder) && placeholder !== src && loadedSrc !== src;
+
   return (
-    <div ref={boxRef} className="h-full w-full overflow-hidden">
+    <div ref={boxRef} className="relative h-full w-full overflow-hidden">
+      {waiting && (
+        <img
+          src={placeholder}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="absolute inset-0 h-full w-full select-none object-contain"
+        />
+      )}
       <img
         ref={imgRef}
         src={src}
         alt={alt}
         loading={loading}
         draggable={false}
-        className="h-full w-full select-none object-contain"
+        onLoad={() => setLoadedSrc(src)}
+        className={`relative h-full w-full select-none object-contain ${waiting ? "opacity-0" : ""}`}
       />
     </div>
   );

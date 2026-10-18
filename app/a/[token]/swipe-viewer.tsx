@@ -66,6 +66,7 @@ export function SwipeViewer({ photos, index, onIndexChange, ref }: Props) {
           <div key={photo.id} className="h-full w-full flex-none snap-center">
             <ZoomableImage
               src={photoUrl(near ? photo.storage_path : photo.thumb_path)}
+              placeholder={photoUrl(photo.thumb_path)}
               alt={photo.filename}
               loading={near ? "eager" : "lazy"}
               swipeable

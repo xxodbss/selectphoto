@@ -79,7 +79,11 @@ export function Filmstrip({ photos, index, onIndexChange, ratings, keyboardEnabl
       {/* 크게 보기: 화면 전체에 띄우고, 두 손가락·두 번 탭으로 확대 */}
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-bridge">
-          <ZoomableImage src={photoUrl(photo.storage_path)} alt={photo.filename} />
+          <ZoomableImage
+            src={photoUrl(photo.storage_path)}
+            placeholder={photoUrl(photo.thumb_path)}
+            alt={photo.filename}
+          />
           <button
             type="button"
             onClick={() => setFullscreen(false)}
