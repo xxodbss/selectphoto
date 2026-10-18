@@ -5,6 +5,7 @@ import { requireAuthor } from "@/lib/auth";
 import { StatusBadge } from "../../status-badge";
 import { reopenAlbum } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
+import { DeleteAlbumButton } from "./delete-album-button";
 import { PhotoManager } from "./photo-manager";
 import { ResultPanel } from "./result-panel";
 import { UploadPhotos } from "./upload-photos";
@@ -80,6 +81,8 @@ async function AlbumDetail({ id }: { id: string }) {
       )}
 
       {album.photos.length > 0 && <PhotoManager albumId={id} photos={album.photos} />}
+
+      <DeleteAlbumButton albumId={id} title={album.title} photoCount={album.photos.length} />
     </>
   );
 }
