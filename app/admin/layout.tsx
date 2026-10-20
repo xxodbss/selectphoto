@@ -7,7 +7,8 @@ import { SidebarLinks } from "./sidebar-links";
 // 작가 화면 공통 틀: PC에서는 왼쪽에 앨범 목록, 휴대폰에서는 숨김
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <div className="flex flex-1">
+    // 작가 화면은 브릿지 회색 바탕에 어두운 색(dark:) 설정을 쓴다
+    <div className="dark author-page flex flex-1 bg-bridge text-zinc-100">
       <aside className="sticky top-0 hidden h-dvh w-64 flex-none flex-col gap-4 border-r border-zinc-200 p-4 lg:flex dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">내 앨범</h2>

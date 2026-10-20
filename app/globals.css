@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 어두운 색(dark:)은 기기 다크 모드가 아니라 .dark가 붙은 화면(작가 화면 등)에서 쓴다 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -31,4 +34,10 @@ html:has(.bridge-page),
 html:has(.bridge-page) body {
   background: rgb(50 50 50);
   overscroll-behavior: none;
+}
+
+/* 작가 화면: 페이지 바탕도 브릿지 회색으로 (끝까지 당겨도 하얗게 비치지 않게) */
+html:has(.author-page),
+html:has(.author-page) body {
+  background: rgb(50 50 50);
 }
