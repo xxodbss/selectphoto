@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // Pretendard 가변 폰트 (굵기 45–920을 파일 하나로)
@@ -27,6 +28,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
+        {/* Vercel 방문 수 집계 (배포 사이트에서만 보냄) */}
+        <Analytics />
       </body>
     </html>
   );
