@@ -11,6 +11,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
     // 작가 화면도 모델 화면과 같은 브릿지 회색 바탕 (색은 lib/ui.ts)
     <div className="author-page flex flex-1 bg-bridge text-zinc-100">
       <aside className="sticky top-0 hidden h-dvh w-64 flex-none flex-col gap-4 border-r border-black/30 p-4 lg:flex">
+        <Link href="/admin" className={ui.logo}>
+          epilego
+        </Link>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">내 앨범</h2>
           <Link href="/admin" className={ui.pill}>

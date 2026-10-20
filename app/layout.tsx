@@ -11,8 +11,8 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "selectphoto",
-  description: "스냅 사진 셀렉 — 링크로 보고, 별점 매기고, 제출",
+  title: "epilego",
+  description: "에필레고 — 스냅 사진 셀렉. 링크로 보고, 별점 매기고, 제출",
 };
 
 export const viewport: Viewport = {

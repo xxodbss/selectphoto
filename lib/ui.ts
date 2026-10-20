@@ -1,6 +1,7 @@
 // 작가 화면 공통 색·모양 — 모델 화면과 같은 규칙
 // (브릿지 회색 바탕, 밝은 글자, 흰 주 버튼, 회색 테두리 보조 버튼, 경고는 노랑)
 export const ui = {
+  logo: "text-lg font-bold tracking-tight", // 서비스 이름 epilego (로고는 악센트 없이 소문자)
   muted: "text-zinc-400", // 보조 글자 (모델 화면 파일명 색)
   divider: "border-black/30", // 구분선 (모델 화면 위쪽 막대 아래 선)
   input:

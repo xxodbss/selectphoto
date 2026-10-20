@@ -27,7 +27,7 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
   // 브릿지 스크립트가 읽는 파일: "별점<탭>파일명" 한 줄씩 (0점도 넣어서 기존 별점을 지운다)
   function download() {
     const lines = [
-      `# selectphoto 셀렉 결과 — ${title}`,
+      `# epilego 셀렉 결과 — ${title}`,
       "# 별점<탭>파일명 (0 = 안 고름)",
       ...sorted.map((p) => `${p.rating}\t${p.filename}`),
     ];
@@ -35,7 +35,7 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `selectphoto-결과-${title.replace(/[\\/:*?"<>|]/g, "_")}.txt`;
+    a.download = `epilego-결과-${title.replace(/[\\/:*?"<>|]/g, "_")}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -79,13 +79,13 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
         <ol className="mt-2 flex list-decimal flex-col gap-1 pl-4">
           <li>
             처음 한 번만:{" "}
-            <a href="/bridge/selectphoto-apply-ratings.jsx" download className="text-zinc-200 underline">
+            <a href="/bridge/epilego-apply-ratings.jsx" download className="text-zinc-200 underline">
               브릿지 스크립트 받기
             </a>{" "}
             → 브릿지 [환경 설정 → 시작 스크립트 → 내 시작 스크립트 표시]에 넣고 브릿지를 다시 켜요.
           </li>
           <li>브릿지에서 이 앨범 사진이 있는 폴더를 열어요.</li>
-          <li>[도구 → selectphoto 별점 적용…]을 누르고 내려받은 결과 파일을 골라요.</li>
+          <li>[도구 → epilego 별점 적용…]을 누르고 내려받은 결과 파일을 골라요.</li>
           <li>같은 이름의 사진(JPEG·RAW 모두)에 모델 별점이 들어가요. 안 고른 사진은 별점이 지워져요.</li>
         </ol>
       </details>

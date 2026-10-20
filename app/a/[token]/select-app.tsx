@@ -107,16 +107,22 @@ export function SelectApp({ token, album }: { token: string; album: SharedAlbum 
             }}
             className={`grid h-12 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 ${pageScroll ? "cursor-pointer" : ""}`}
           >
-            <span className="min-w-0 truncate text-sm">
-              {comparing
-                ? "비교 중"
-                : mode === "filmstrip"
-                  ? shown.length
+            {comparing || mode === "filmstrip" ? (
+              <span className="min-w-0 truncate text-sm">
+                {comparing
+                  ? "비교 중"
+                  : shown.length
                     ? // 골라 볼 때는 원래 번호도 같이 (예: 37번 · 3 / 10)
                       `${filter !== "all" ? `${photoNumbers.get(shown[index].id)}번 · ` : ""}${index + 1} / ${shown.length}`
-                    : ""
-                  : album.title}
-            </span>
+                    : ""}
+              </span>
+            ) : (
+              // 격자: 서비스 이름 아래에 앨범 이름 (필름스트립은 사진 번호에 집중)
+              <div className="flex min-w-0 flex-col">
+                <span className="text-[11px] font-bold leading-4 tracking-tight text-zinc-400">epilego</span>
+                <span className="truncate text-sm leading-5">{album.title}</span>
+              </div>
+            )}
             <span
               className={`text-center text-sm ${
                 ratings.fiveCount >= album.five_star_limit ? "text-amber-400" : ""

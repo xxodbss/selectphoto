@@ -4,12 +4,16 @@ import { requireAuthor } from "@/lib/auth";
 import { logout } from "./actions";
 import { AlbumForm } from "./album-form";
 import { StatusBadge } from "./status-badge";
+import { ui } from "@/lib/ui";
 
 export default function AdminPage() {
   return (
     // PC에서는 왼쪽 칸에 목록·로그아웃이 있으므로 새 앨범 양식만 보인다
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8 lg:py-12">
-      <h1 className="text-2xl font-bold lg:hidden">내 앨범</h1>
+      <div className="flex flex-col gap-1 lg:hidden">
+        <p className={`${ui.logo} text-zinc-400`}>epilego</p>
+        <h1 className="text-2xl font-bold">내 앨범</h1>
+      </div>
       {/* 로그인 정보는 요청 때마다 읽으므로 Suspense 안에 둔다 */}
       <Suspense fallback={<p className="text-sm text-zinc-400">불러오는 중…</p>}>
         <div className="lg:hidden">
