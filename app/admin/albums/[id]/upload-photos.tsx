@@ -104,11 +104,11 @@ export function UploadPhotos({ albumId }: { albumId: string }) {
           handleFiles(e.dataTransfer.files);
         }}
         className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-6 text-center lg:h-28 ${
-          dragging ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900" : "border-zinc-300 dark:border-zinc-700"
+          dragging ? "border-zinc-100 bg-black/20" : "border-zinc-500"
         } ${uploading ? "pointer-events-none opacity-50" : ""}`}
       >
         <span className="font-semibold">사진 올리기</span>
-        <span className="text-sm text-zinc-500">
+        <span className="text-sm text-zinc-400">
           눌러서 고르거나 여기로 끌어다 놓으세요 (JPEG, 여러 장 가능)
         </span>
         <input
@@ -126,9 +126,10 @@ export function UploadPhotos({ albumId }: { albumId: string }) {
 
       {progress && (
         <div className="flex flex-col gap-2 text-sm">
-          <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          {/* 모델 화면 사진 로딩 막대와 같은 흰 막대 */}
+          <div className="h-1 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full bg-zinc-900 transition-all dark:bg-zinc-100"
+              className="h-full bg-white/80 transition-all"
               style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 100}%` }}
             />
           </div>
@@ -138,12 +139,12 @@ export function UploadPhotos({ albumId }: { albumId: string }) {
               : `완료: ${progress.total - progress.failed.length}장 올림`}
           </p>
           {progress.failed.length > 0 && (
-            <p className="text-red-600">
+            <p className="text-red-400">
               실패 {progress.failed.length}장 — 다시 올려 주세요: {progress.failed.join(", ")}
             </p>
           )}
           {progress.skipped.length > 0 && (
-            <p className="text-amber-700">
+            <p className="text-amber-400">
               JPEG가 아니라 건너뜀 {progress.skipped.length}장: {progress.skipped.join(", ")}
             </p>
           )}

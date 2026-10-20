@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ui } from "@/lib/ui";
 
 type Photo = { id: string; filename: string; rating: number };
 
@@ -40,18 +41,19 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    // 카드 대신 위쪽 구분선만 (모델 화면과 같은 납작한 느낌)
+    <section className="flex flex-col gap-3 border-t border-black/30 pt-6">
       <h2 className="font-semibold">셀렉 결과</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-zinc-300">
         {[...[5, 4, 3, 2, 1].map((s) => `★${s} ${photos.filter((p) => p.rating === s).length}장`), `안 고름 ${unrated}장`].join(" · ")}
       </p>
 
       {groups.length > 0 ? (
-        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-xs leading-5 dark:bg-zinc-900">
+        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-5 text-zinc-200">
           {listText}
         </pre>
       ) : (
-        <p className="text-sm text-zinc-500">아직 모델이 고른 사진이 없어요.</p>
+        <p className="text-sm text-zinc-400">아직 모델이 고른 사진이 없어요.</p>
       )}
 
       <div className="flex gap-2">
@@ -59,25 +61,25 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
           type="button"
           onClick={copy}
           disabled={groups.length === 0}
-          className="flex-1 rounded-lg border border-zinc-300 py-3 text-sm disabled:opacity-40 dark:border-zinc-700"
+          className={`flex-1 ${ui.secondary}`}
         >
           {copied ? "복사 완료!" : "목록 복사"}
         </button>
         <button
           type="button"
           onClick={download}
-          className="flex-1 rounded-lg bg-zinc-900 py-3 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className={`flex-1 text-sm ${ui.primary}`}
         >
           결과 파일 내려받기
         </button>
       </div>
 
-      <details className="text-xs text-zinc-500">
+      <details className="text-xs text-zinc-400">
         <summary className="cursor-pointer">브릿지에 별점 적용하는 법</summary>
         <ol className="mt-2 flex list-decimal flex-col gap-1 pl-4">
           <li>
             처음 한 번만:{" "}
-            <a href="/bridge/selectphoto-apply-ratings.jsx" download className="underline">
+            <a href="/bridge/selectphoto-apply-ratings.jsx" download className="text-zinc-200 underline">
               브릿지 스크립트 받기
             </a>{" "}
             → 브릿지 [환경 설정 → 시작 스크립트 → 내 시작 스크립트 표시]에 넣고 브릿지를 다시 켜요.

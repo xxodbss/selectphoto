@@ -4,6 +4,7 @@
 import { useState, useTransition } from "react";
 import { photoUrl } from "@/lib/photos";
 import { deletePhotos } from "./actions";
+import { ui } from "@/lib/ui";
 
 type Photo = { id: string; filename: string; thumb_path: string; rating: number };
 
@@ -48,19 +49,19 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
             <button
               type="button"
               onClick={() => setSelected(allSelected ? new Set() : new Set(photos.map((p) => p.id)))}
-              className="underline"
+              className="text-zinc-300 underline"
             >
               {allSelected ? "전체 해제" : "전체 선택"}
             </button>
             <div className="flex gap-2">
-              <button type="button" onClick={stopSelecting} disabled={pending} className="rounded-lg border px-3 py-2">
+              <button type="button" onClick={stopSelecting} disabled={pending} className={ui.pill}>
                 취소
               </button>
               <button
                 type="button"
                 onClick={remove}
                 disabled={selected.size === 0 || pending}
-                className="rounded-lg bg-red-600 px-3 py-2 font-semibold text-white disabled:opacity-40"
+                className="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
               >
                 {pending ? "지우는 중…" : `선택한 ${selected.size}장 지우기`}
               </button>
@@ -68,8 +69,8 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
           </>
         ) : (
           <>
-            <span className="text-zinc-500">사진 {photos.length}장 (촬영 시간순)</span>
-            <button type="button" onClick={() => setSelecting(true)} className="rounded-lg border px-3 py-2">
+            <span className="text-zinc-400">사진 {photos.length}장 (촬영 시간순)</span>
+            <button type="button" onClick={() => setSelecting(true)} className={ui.pill}>
               선택
             </button>
           </>
@@ -77,7 +78,7 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={ui.error}>
           {error}
         </p>
       )}
@@ -98,26 +99,26 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
                   src={photoUrl(photo.thumb_path)}
                   alt={photo.filename}
                   loading="lazy"
-                  className={`aspect-square w-full rounded-md bg-zinc-100 object-cover dark:bg-zinc-800 ${
+                  className={`aspect-square w-full rounded-md bg-black/20 object-cover ${
                     isSelected ? "opacity-60" : ""
                   }`}
                 />
                 {photo.rating > 0 && (
-                  <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-100">
+                  <span className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">
                     ★{photo.rating}
                   </span>
                 )}
                 {selecting && (
                   <span
                     className={`absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 text-xs ${
-                      isSelected ? "border-red-600 bg-red-600 text-white" : "border-white bg-black/30"
+                      isSelected ? "border-zinc-100 bg-zinc-100 text-zinc-900" : "border-white/80 bg-black/30"
                     }`}
                   >
                     {isSelected && "✓"}
                   </span>
                 )}
               </button>
-              <span className="truncate text-xs text-zinc-500">
+              <span className="truncate text-xs text-zinc-400">
                 {i + 1}. {photo.filename}
               </span>
             </li>

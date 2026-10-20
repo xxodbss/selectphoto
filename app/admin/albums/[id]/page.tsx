@@ -9,16 +9,17 @@ import { DeleteAlbumButton } from "./delete-album-button";
 import { PhotoManager } from "./photo-manager";
 import { ResultPanel } from "./result-panel";
 import { UploadPhotos } from "./upload-photos";
+import { ui } from "@/lib/ui";
 
 export default function AlbumPage({ params }: PageProps<"/admin/albums/[id]">) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8 lg:max-w-5xl lg:px-8">
       {/* PC에서는 왼쪽 칸에 목록이 있어서 뒤로 가기가 필요 없다 */}
-      <Link href="/admin" className="text-sm underline lg:hidden">
+      <Link href="/admin" className="text-sm text-zinc-300 underline lg:hidden">
         ← 내 앨범
       </Link>
       {/* 주소 속 ID와 로그인 정보는 요청 때마다 읽으므로 Suspense 안에 둔다 */}
-      <Suspense fallback={<p className="text-sm text-zinc-500">불러오는 중…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-400">불러오는 중…</p>}>
         {params.then(({ id }) => (
           <AlbumDetail id={id} />
         ))}
@@ -47,7 +48,7 @@ async function AlbumDetail({ id }: { id: string }) {
         <h1 className="text-2xl font-bold">{album.title}</h1>
         <StatusBadge submitted={Boolean(album.submitted_at)} />
       </div>
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-zinc-400">
         사진 {album.photos.length}장 · 5점 최대 {album.five_star_limit}장
       </p>
       {/* PC에서는 공유 링크와 업로드를 나란히, 두 칸 높이를 같게 (lg:h-28) */}
@@ -59,7 +60,7 @@ async function AlbumDetail({ id }: { id: string }) {
           {album.submitted_at ? (
             // 모델이 실수로 마쳤거나 다시 고르고 싶을 때 (별점은 그대로 남음)
             <form action={reopenAlbum.bind(null, id)}>
-              <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm lg:h-28 dark:border-zinc-700">
+              <button type="submit" className={`w-full ${ui.secondary} lg:h-28`}>
                 셀렉 다시 열기
               </button>
             </form>
@@ -73,7 +74,7 @@ async function AlbumDetail({ id }: { id: string }) {
         <>
           <ResultPanel title={album.title} photos={album.photos} />
           {!album.submitted_at && (
-            <p className="-mt-3 text-xs text-zinc-500">
+            <p className="-mt-3 text-xs text-zinc-400">
               모델이 고르는 중이에요. 새로고침하면 최신 별점을 볼 수 있어요.
             </p>
           )}

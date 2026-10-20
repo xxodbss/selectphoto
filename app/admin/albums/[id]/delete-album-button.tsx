@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { deleteAlbum } from "./actions";
+import { ui } from "@/lib/ui";
 
 // 앨범 지우기 (맨 아래, 한 번 더 확인)
 export function DeleteAlbumButton({ albumId, title, photoCount }: { albumId: string; title: string; photoCount: number }) {
@@ -21,17 +22,17 @@ export function DeleteAlbumButton({ albumId, title, photoCount }: { albumId: str
   }
 
   return (
-    <div className="flex flex-col gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+    <div className="flex flex-col gap-2 border-t border-black/30 pt-6">
       <button
         type="button"
         onClick={remove}
         disabled={pending}
-        className="self-start rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 disabled:opacity-50 dark:border-red-900"
+        className="self-start rounded-lg border border-red-400/60 px-4 py-2 text-sm text-red-400 disabled:opacity-50"
       >
         {pending ? "지우는 중…" : "앨범 지우기"}
       </button>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={ui.error}>
           {error}
         </p>
       )}
