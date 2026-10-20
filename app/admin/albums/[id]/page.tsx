@@ -50,7 +50,7 @@ async function AlbumDetail({ id }: { id: string }) {
       <p className="text-sm text-zinc-500">
         사진 {album.photos.length}장 · 5점 최대 {album.five_star_limit}장
       </p>
-      {/* PC에서는 공유 링크와 업로드를 나란히 */}
+      {/* PC에서는 공유 링크와 업로드를 나란히, 두 칸 높이를 같게 (lg:h-28) */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
         <div className="flex flex-col lg:w-56 lg:flex-none">
           <CopyLinkButton token={album.share_token} />
@@ -59,7 +59,7 @@ async function AlbumDetail({ id }: { id: string }) {
           {album.submitted_at ? (
             // 모델이 실수로 마쳤거나 다시 고르고 싶을 때 (별점은 그대로 남음)
             <form action={reopenAlbum.bind(null, id)}>
-              <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm dark:border-zinc-700">
+              <button type="submit" className="w-full rounded-lg border border-zinc-300 py-3 text-sm lg:h-28 dark:border-zinc-700">
                 셀렉 다시 열기
               </button>
             </form>

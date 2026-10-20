@@ -16,7 +16,7 @@ export function CopyLinkButton({ token }: { token: string }) {
     <button
       type="button"
       onClick={copy}
-      className="rounded-lg bg-zinc-900 py-3 font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+      className="rounded-lg bg-zinc-900 py-3 font-semibold text-white lg:h-28 dark:bg-zinc-100 dark:text-zinc-900"
     >
       {copied ? "복사 완료!" : "공유 링크 복사"}
     </button>

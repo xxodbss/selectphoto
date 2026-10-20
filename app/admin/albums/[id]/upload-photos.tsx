@@ -103,7 +103,7 @@ export function UploadPhotos({ albumId }: { albumId: string }) {
           setDragging(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed p-6 text-center ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-6 text-center lg:h-28 ${
           dragging ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900" : "border-zinc-300 dark:border-zinc-700"
         } ${uploading ? "pointer-events-none opacity-50" : ""}`}
       >
