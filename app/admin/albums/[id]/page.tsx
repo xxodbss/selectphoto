@@ -32,7 +32,7 @@ async function AlbumDetail({ id }: { id: string }) {
   const { supabase } = await requireAuthor();
   const { data: album } = await supabase
     .from("albums")
-    .select("title, share_token, five_star_limit, submitted_at, photos(id, filename, thumb_path, sort_order, rating)")
+    .select("title, share_token, five_star_limit, submitted_at, photos(id, filename, storage_path, thumb_path, sort_order, rating)")
     .eq("id", id)
     .order("sort_order", { referencedTable: "photos" })
     .maybeSingle();

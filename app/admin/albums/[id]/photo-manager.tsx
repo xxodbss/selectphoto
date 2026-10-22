@@ -4,9 +4,10 @@
 import { useRef, useState, useTransition } from "react";
 import { photoUrl } from "@/lib/photos";
 import { deletePhotos } from "./actions";
+import { PhotoPreview } from "./photo-preview";
 import { ui } from "@/lib/ui";
 
-type Photo = { id: string; filename: string; thumb_path: string; rating: number };
+type Photo = { id: string; filename: string; storage_path: string; thumb_path: string; rating: number };
 
 type Drag = {
   start: number; // 누르기 시작한 사진
@@ -21,6 +22,7 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null); // 크게 보는 사진 (선택 중이 아닐 때 탭)
   const [pending, startTransition] = useTransition();
   const anchor = useRef<number | null>(null); // Shift+클릭 범위의 시작 (마지막으로 누른 사진)
   const drag = useRef<Drag | null>(null);
@@ -191,8 +193,9 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
                 type="button"
                 onPointerDown={(e) => onPointerDown(e, i)}
                 onPointerUp={() => onPointerUp(i)}
-                // 손가락·마우스는 위에서 처리하고, 키보드(Enter·Space)로 누를 때만 여기서
-                onClick={(e) => selecting && e.detail === 0 && toggle(i)}
+                // 선택 중: 손가락·마우스는 위에서 처리하고, 키보드(Enter·Space)로 누를 때만 여기서
+                // 선택 중이 아니면: 크게 보기
+                onClick={(e) => (selecting ? e.detail === 0 && toggle(i) : setViewing(i))}
                 className={`relative block ${selecting ? "cursor-pointer" : "cursor-default"}`}
                 aria-pressed={selecting ? isSelected : undefined}
                 aria-label={photo.filename}
@@ -228,6 +231,10 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
           );
         })}
       </ul>
+
+      {viewing !== null && (
+        <PhotoPreview photos={photos} index={viewing} onChange={setViewing} onClose={() => setViewing(null)} />
+      )}
     </div>
   );
 }
