@@ -55,9 +55,11 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
     let pan: { start: Point; t: Point } | null = null;
     let tap: { start: Point; time: number } | null = null;
     let lastTap: { at: Point; time: number } | null = null;
+    let mousePan: { start: Point; t: Point; moved: boolean } | null = null;
+    let pointerType = ""; // 마지막으로 누른 게 마우스인지 (터치 뒤에 따라오는 가짜 마우스 이벤트를 거르려고)
 
     // 화면 좌표 → 사진 가운데 기준 좌표
-    function local(touch: Touch): Point {
+    function local(touch: { clientX: number; clientY: number }): Point {
       const r = box.getBoundingClientRect();
       return { x: touch.clientX - r.left - r.width / 2, y: touch.clientY - r.top - r.height / 2 };
     }
@@ -175,6 +177,51 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
       e.preventDefault();
     }
 
+    // PC 마우스: 사진을 두 번 클릭하면 확대/원래대로, 확대 중에는 끌어서 이동
+    function onPointerDown(e: PointerEvent) {
+      pointerType = e.pointerType;
+      if (e.pointerType === "mouse" && e.button === 0 && s > 1) {
+        mousePan = { start: local(e), t, moved: false };
+      }
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      if (!mousePan) return;
+      const p = local(e);
+      if (Math.hypot(p.x - mousePan.start.x, p.y - mousePan.start.y) > 3) mousePan.moved = true;
+      t = { x: mousePan.t.x + p.x - mousePan.start.x, y: mousePan.t.y + p.y - mousePan.start.y };
+      clamp();
+      apply();
+    }
+
+    function onPointerUp() {
+      // 끌고 난 직후의 클릭은 무시 (빈 곳 클릭으로 닫히지 않게)
+      if (mousePan?.moved) {
+        window.addEventListener("click", swallowClick, { capture: true, once: true });
+        setTimeout(() => window.removeEventListener("click", swallowClick, { capture: true }), 0);
+      }
+      mousePan = null;
+    }
+
+    function swallowClick(e: MouseEvent) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    function onDoubleClick(e: MouseEvent) {
+      if (pointerType !== "mouse") return; // 휴대폰 두 번 탭은 위 터치 처리가 맡는다
+      if (s > 1) {
+        s = 1;
+        t = { x: 0, y: 0 };
+      } else if (e.target === img) {
+        const at = local(e);
+        zoomAround(at, at, 1, { x: 0, y: 0 }, DOUBLE_TAP_SCALE);
+      } else {
+        return;
+      }
+      apply(true);
+    }
+
     resetRef.current = () => {
       s = 1;
       t = { x: 0, y: 0 };
@@ -187,7 +234,15 @@ export function ZoomableImage({ src, alt, placeholder, loading, swipeable = fals
     box.addEventListener("touchend", onTouchEnd);
     box.addEventListener("touchcancel", onTouchEnd);
     box.addEventListener("gesturestart", preventGesture);
+    box.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    box.addEventListener("dblclick", onDoubleClick);
     return () => {
+      box.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      box.removeEventListener("dblclick", onDoubleClick);
       box.removeEventListener("touchstart", onTouchStart);
       box.removeEventListener("touchmove", onTouchMove);
       box.removeEventListener("touchend", onTouchEnd);
