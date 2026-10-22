@@ -14,7 +14,6 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
   const groups = [5, 4, 3, 2, 1]
     .map((stars) => ({ stars, files: sorted.filter((p) => p.rating === stars).map((p) => p.filename) }))
     .filter((g) => g.files.length > 0);
-  const unrated = photos.filter((p) => p.rating === 0).length;
 
   // 사람이 읽는 목록 (카톡·메모장용)
   const listText = groups.map((g) => `★${g.stars} (${g.files.length}장)\n${g.files.join("\n")}`).join("\n\n");
@@ -43,10 +42,8 @@ export function ResultPanel({ title, photos }: { title: string; photos: Photo[] 
   return (
     // 카드 대신 위쪽 구분선만 (모델 화면과 같은 납작한 느낌)
     <section className="flex flex-col gap-3 border-t border-black/30 pt-6">
+      {/* 점수별 장수는 아래 사진 목록 위 골라 보기 줄에 있다 */}
       <h2 className="font-semibold">셀렉 결과</h2>
-      <p className="text-sm text-zinc-300">
-        {[...[5, 4, 3, 2, 1].map((s) => `★${s} ${photos.filter((p) => p.rating === s).length}장`), `안 고름 ${unrated}장`].join(" · ")}
-      </p>
 
       {groups.length > 0 ? (
         <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-5 text-zinc-200">

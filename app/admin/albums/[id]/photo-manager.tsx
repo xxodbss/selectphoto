@@ -3,6 +3,8 @@
 /* eslint-disable @next/next/no-img-element -- Vercel 이미지 최적화 대신 미리 줄여 둔 썸네일을 그대로 쓴다 */
 import { useRef, useState, useTransition } from "react";
 import { photoUrl } from "@/lib/photos";
+import { FilterChips } from "@/app/a/[token]/filter-chips";
+import { filterLabel, matchesFilter, type RatingFilter } from "@/app/a/[token]/rating-filter";
 import { deletePhotos } from "./actions";
 import { PhotoPreview } from "./photo-preview";
 import { ui } from "@/lib/ui";
@@ -16,9 +18,15 @@ type Drag = {
   moved: boolean; // 다른 사진까지 끌었는지 (아니면 그냥 탭)
 };
 
-// 작가 화면 사진 목록: 별점 표시, 선택해서 한꺼번에 지우기
+// 작가 화면 사진 목록: 별점 표시, 별점별로 골라 보기, 선택해서 한꺼번에 지우기
 // 여러 장 고르기: 탭, Shift+클릭 범위, 끌어서 선택, 별점별로 한 번에
-export function PhotoManager({ albumId, photos }: { albumId: string; photos: Photo[] }) {
+export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; photos: Photo[] }) {
+  const [filter, setFilter] = useState<RatingFilter>("all");
+  // 지금 보이는 사진 (골라 보기 적용) — 아래 선택·크게 보기는 모두 이 목록 기준
+  const photos = allPhotos.filter((p) => matchesFilter(p.rating, filter));
+  // 골라 볼 때도 원래 번호를 보여준다 (모델 화면과 같게)
+  const numbers = new Map(allPhotos.map((p, i) => [p.id, i + 1]));
+  const ratings = Object.fromEntries(allPhotos.map((p) => [p.id, p.rating]));
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +35,15 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
   const anchor = useRef<number | null>(null); // Shift+클릭 범위의 시작 (마지막으로 누른 사진)
   const drag = useRef<Drag | null>(null);
 
-  const allSelected = selected.size === photos.length;
+  const allSelected = photos.length > 0 && selected.size === photos.length;
+
+  // 골라 보기를 바꾸면 안 보이게 된 사진은 선택에서 뺀다 (보이지 않는 사진이 지워지지 않게)
+  function applyFilter(next: RatingFilter) {
+    setFilter(next);
+    setViewing(null);
+    anchor.current = null;
+    setSelected((prev) => new Set([...prev].filter((id) => matchesFilter(ratings[id] ?? 0, next))));
+  }
 
   // base 상태에서 from–to 사이를 모두 선택(또는 해제)한 결과
   function withRange(base: Set<string>, from: number, to: number, select: boolean) {
@@ -109,39 +125,44 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 스크롤해도 장수·선택 버튼 줄은 맨 위에 붙어 따라온다 (바탕을 깔아 사진이 밑으로 지나가게) */}
-      <div className="sticky top-0 z-10 -mx-4 flex h-12 items-center justify-between gap-2 bg-bridge px-4 text-sm lg:-mx-8 lg:px-8">
-        {selecting ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setSelected(allSelected ? new Set() : new Set(photos.map((p) => p.id)))}
-              className="text-zinc-300 underline"
-            >
-              {allSelected ? "전체 해제" : "전체 선택"}
-            </button>
-            <div className="flex gap-2">
-              <button type="button" onClick={stopSelecting} disabled={pending} className={ui.pill}>
-                취소
-              </button>
+      {/* 스크롤해도 장수·선택 버튼 줄과 골라 보기 줄은 맨 위에 붙어 따라온다 (바탕을 깔아 사진이 밑으로 지나가게) */}
+      <div className="sticky top-0 z-10 -mx-4 bg-bridge lg:-mx-8">
+        <div className="flex h-12 items-center justify-between gap-2 px-4 text-sm lg:px-8">
+          {selecting ? (
+            <>
               <button
                 type="button"
-                onClick={remove}
-                disabled={selected.size === 0 || pending}
-                className="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
+                onClick={() => setSelected(allSelected ? new Set() : new Set(photos.map((p) => p.id)))}
+                className="text-zinc-300 underline"
               >
-                {pending ? "지우는 중…" : `선택한 ${selected.size}장 지우기`}
+                {allSelected ? "전체 해제" : "전체 선택"}
               </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <span className="text-zinc-400">사진 {photos.length}장 (촬영 시간순)</span>
-            <button type="button" onClick={() => setSelecting(true)} className={ui.pill}>
-              선택
-            </button>
-          </>
-        )}
+              <div className="flex gap-2">
+                <button type="button" onClick={stopSelecting} disabled={pending} className={ui.pill}>
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={remove}
+                  disabled={selected.size === 0 || pending}
+                  className="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
+                >
+                  {pending ? "지우는 중…" : `선택한 ${selected.size}장 지우기`}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-zinc-400">
+                사진 {photos.length}장 ({filter === "all" ? "촬영 시간순" : filterLabel(filter)})
+              </span>
+              <button type="button" onClick={() => setSelecting(true)} className={ui.pill}>
+                선택
+              </button>
+            </>
+          )}
+        </div>
+        <FilterChips photos={allPhotos} ratings={ratings} value={filter} onChange={applyFilter} className="px-4 lg:px-8" />
       </div>
 
       {selecting && (
@@ -173,6 +194,15 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
         <p role="alert" className={ui.error}>
           {error}
         </p>
+      )}
+
+      {photos.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-10 text-sm text-zinc-400">
+          <p>{filterLabel(filter)} 사진이 없어요.</p>
+          <button type="button" onClick={() => applyFilter("all")} className={ui.pill}>
+            전체 보기
+          </button>
+        </div>
       )}
 
       <ul
@@ -225,7 +255,7 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
                 )}
               </button>
               <span className="truncate text-xs text-zinc-400">
-                {i + 1}. {photo.filename}
+                {numbers.get(photo.id)}. {photo.filename}
               </span>
             </li>
           );
@@ -233,7 +263,13 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
       </ul>
 
       {viewing !== null && (
-        <PhotoPreview photos={photos} index={viewing} onChange={setViewing} onClose={() => setViewing(null)} />
+        <PhotoPreview
+          photos={photos}
+          index={viewing}
+          number={filter === "all" ? null : (numbers.get(photos[viewing].id) ?? null)}
+          onChange={setViewing}
+          onClose={() => setViewing(null)}
+        />
       )}
     </div>
   );

@@ -11,11 +11,13 @@ type Photo = { id: string; filename: string; storage_path: string; thumb_path: s
 export function PhotoPreview({
   photos,
   index,
+  number,
   onChange,
   onClose,
 }: {
   photos: Photo[];
   index: number;
+  number: number | null; // 골라 보는 중이면 원래 사진 번호 (예: 37번 · 3 / 10)
   onChange: (index: number) => void;
   onClose: () => void;
 }) {
@@ -66,6 +68,7 @@ export function PhotoPreview({
     >
       <SwipeViewer ref={viewerRef} photos={photos} index={index} onIndexChange={onChange} />
       <p className="flex-none px-4 pt-3 text-center text-sm text-zinc-300 tabular-nums">
+        {number !== null && `${number}번 · `}
         {index + 1} / {photos.length} · {photo.filename}
         {photo.rating > 0 && ` · ★${photo.rating}`}
       </p>
