@@ -1,12 +1,13 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Vercel 이미지 최적화 대신 미리 줄여 둔 사진을 그대로 쓴다 */
-import { useEffect } from "react";
-import { photoUrl } from "@/lib/photos";
+import { useEffect, useRef } from "react";
+import { SwipeViewer, type SwipeViewerHandle } from "@/app/a/[token]/swipe-viewer";
 
 type Photo = { id: string; filename: string; storage_path: string; thumb_path: string; rating: number };
 
-// 작가 화면에서 사진을 잠깐 크게 보기: 아무 데나 누르거나 Esc로 닫기, ← →로 옆 사진
+// 작가 화면에서 사진 크게 보기: 모델 화면과 같은 큰 사진 보기를 그대로 쓴다
+// (좌우로 밀어 넘기기, 두 손가락·두 번 탭 확대, 썸네일 먼저 + 진행 막대, 원래 파일명으로 저장)
+// 닫기 버튼·Esc로 닫고, PC는 ← →로 옆 사진
 export function PhotoPreview({
   photos,
   index,
@@ -18,17 +19,22 @@ export function PhotoPreview({
   onChange: (index: number) => void;
   onClose: () => void;
 }) {
+  const viewerRef = useRef<SwipeViewerHandle>(null);
   const photo = photos[index];
 
+  // PC 키보드: 모델 화면과 같게
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft" && index > 0) onChange(index - 1);
-      else if (e.key === "ArrowRight" && index < photos.length - 1) onChange(index + 1);
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "ArrowRight" && index < photos.length - 1) viewerRef.current?.jumpTo(index + 1);
+      else if (e.key === "ArrowLeft" && index > 0) viewerRef.current?.jumpTo(index - 1);
+      else if (e.key === "Escape") onClose();
+      else return;
+      e.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [index, photos.length, onChange, onClose]);
+  });
 
   // 열려 있는 동안 뒤 페이지가 스크롤되지 않게
   useEffect(() => {
@@ -45,36 +51,21 @@ export function PhotoPreview({
       role="dialog"
       aria-modal="true"
       aria-label={photo.filename}
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4 lg:p-10"
+      className="fixed inset-0 z-50 flex flex-col bg-black/90 py-4"
     >
+      <SwipeViewer ref={viewerRef} photos={photos} index={index} onIndexChange={onChange} />
+      <p className="flex-none px-4 pt-3 text-center text-sm text-zinc-300 tabular-nums">
+        {index + 1} / {photos.length} · {photo.filename}
+        {photo.rating > 0 && ` · ★${photo.rating}`}
+      </p>
+      {/* 모델 화면 크게 보기와 같은 닫기 버튼 */}
       <button
         type="button"
         onClick={onClose}
-        aria-label="닫기"
-        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg text-zinc-100"
+        className="absolute right-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-sm text-white"
       >
-        ×
+        닫기 ✕
       </button>
-      {/* 썸네일을 먼저 깔고 큰 사진이 받아지면 그 위에 겹친다 (같은 크기로 맞춰서 바로 보이는 느낌) */}
-      <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
-        <img
-          key={`thumb-${photo.id}`}
-          src={photoUrl(photo.thumb_path)}
-          alt=""
-          className="absolute inset-0 h-full w-full object-contain"
-        />
-        <img
-          key={photo.id}
-          src={photoUrl(photo.storage_path)}
-          alt={photo.filename}
-          className="relative max-h-full max-w-full object-contain"
-        />
-      </div>
-      <p className="flex-none text-sm text-zinc-300 tabular-nums">
-        {index + 1}. {photo.filename}
-        {photo.rating > 0 && ` · ★${photo.rating}`}
-      </p>
     </div>
   );
 }

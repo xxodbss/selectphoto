@@ -13,7 +13,8 @@ export type SwipeViewerHandle = {
 };
 
 type Props = {
-  photos: SharedPhoto[];
+  // 사진 주소에 필요한 칸만 (작가 화면 크게 보기에서도 같이 쓴다)
+  photos: Pick<SharedPhoto, "id" | "filename" | "storage_path" | "thumb_path">[];
   index: number;
   onIndexChange: (index: number) => void;
   ref?: Ref<SwipeViewerHandle>;
