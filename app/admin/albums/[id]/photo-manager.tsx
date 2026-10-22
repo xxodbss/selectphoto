@@ -107,7 +107,8 @@ export function PhotoManager({ albumId, photos }: { albumId: string; photos: Pho
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2 text-sm">
+      {/* 스크롤해도 장수·선택 버튼 줄은 맨 위에 붙어 따라온다 (바탕을 깔아 사진이 밑으로 지나가게) */}
+      <div className="sticky top-0 z-10 -mx-4 flex h-12 items-center justify-between gap-2 bg-bridge px-4 text-sm lg:-mx-8 lg:px-8">
         {selecting ? (
           <>
             <button
