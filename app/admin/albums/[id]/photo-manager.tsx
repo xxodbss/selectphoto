@@ -30,17 +30,24 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<number | null>(null); // 크게 보는 사진 (선택 중이 아닐 때 탭)
+  // 크게 보는 사진 (선택 중이 아닐 때 탭) — 순서 대신 id로 기억해서, 새로 고침으로 목록이 바뀌어도 같은 사진을 찾는다
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const anchor = useRef<number | null>(null); // Shift+클릭 범위의 시작 (마지막으로 누른 사진)
+  const anchor = useRef<string | null>(null); // Shift+클릭 범위의 시작 (마지막으로 누른 사진 id)
   const drag = useRef<Drag | null>(null);
 
-  const allSelected = photos.length > 0 && selected.size === photos.length;
+  // 보던 사진이 목록에서 빠지면(모델이 별점을 바꾸는 등) 크게 보기를 닫는다
+  const viewing = viewingId === null ? -1 : photos.findIndex((p) => p.id === viewingId);
+  // 장수·전체 선택·지우기는 선택한 사진 중 지금 보이는 것만 (새로 고침으로 안 보이게 된 사진이 지워지지 않게)
+  const visibleSelected = photos.filter((p) => selected.has(p.id));
+  const allSelected = photos.length > 0 && visibleSelected.length === photos.length;
+  // 별점별로 한 번에 선택: 지금 골라 보는 목록에 있을 수 있는 점수만 (★5만 볼 때는 숨김)
+  const ratingButtons = [0, 1, 2, 3, 4, 5].filter((rating) => matchesFilter(rating, filter));
 
-  // 골라 보기를 바꾸면 안 보이게 된 사진은 선택에서 뺀다 (보이지 않는 사진이 지워지지 않게)
+  // 골라 보기를 바꾸면 안 보이게 된 사진은 선택에서 뺀다 (다시 전체로 돌아와도 되살아나지 않게)
   function applyFilter(next: RatingFilter) {
     setFilter(next);
-    setViewing(null);
+    setViewingId(null);
     anchor.current = null;
     setSelected((prev) => new Set([...prev].filter((id) => matchesFilter(ratings[id] ?? 0, next))));
   }
@@ -56,7 +63,7 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
   }
 
   function toggle(i: number) {
-    anchor.current = i;
+    anchor.current = photos[i].id;
     setSelected((prev) => withRange(prev, i, i, !prev.has(photos[i].id)));
   }
 
@@ -69,10 +76,11 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
   function onPointerDown(e: React.PointerEvent, i: number) {
     if (!selecting || e.button !== 0) return;
     // Shift+클릭: 마지막으로 누른 사진부터 여기까지 (시작 사진 상태에 맞춰 선택 또는 해제)
-    if (e.shiftKey && anchor.current !== null) {
-      const from = anchor.current;
+    // 시작 사진이 지워졌거나 목록에서 빠졌으면 그냥 탭처럼
+    const from = e.shiftKey ? photos.findIndex((p) => p.id === anchor.current) : -1;
+    if (from >= 0) {
       setSelected((prev) => withRange(prev, from, i, prev.has(photos[from].id)));
-      anchor.current = i;
+      anchor.current = photos[i].id;
       return;
     }
     drag.current = { start: i, select: !selected.has(photos[i].id), base: selected, moved: false };
@@ -90,7 +98,7 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
     setSelected(withRange(d.base, d.start, i, d.select));
-    anchor.current = i;
+    anchor.current = photos[i].id;
   }
 
   function onPointerUp(i: number) {
@@ -112,12 +120,14 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
     setSelecting(false);
     setSelected(new Set());
     setError(null);
+    anchor.current = null;
   }
 
   function remove() {
-    if (!confirm(`사진 ${selected.size}장을 지울까요? 지운 사진은 되돌릴 수 없어요.`)) return;
+    const ids = visibleSelected.map((p) => p.id);
+    if (!confirm(`사진 ${ids.length}장을 지울까요? 지운 사진은 되돌릴 수 없어요.`)) return;
     startTransition(async () => {
-      const result = await deletePhotos(albumId, [...selected]);
+      const result = await deletePhotos(albumId, ids);
       if (result.error) setError(result.error);
       else stopSelecting();
     });
@@ -144,10 +154,10 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
                 <button
                   type="button"
                   onClick={remove}
-                  disabled={selected.size === 0 || pending}
+                  disabled={visibleSelected.length === 0 || pending}
                   className="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
                 >
-                  {pending ? "지우는 중…" : `선택한 ${selected.size}장 지우기`}
+                  {pending ? "지우는 중…" : `선택한 ${visibleSelected.length}장 지우기`}
                 </button>
               </div>
             </>
@@ -170,23 +180,25 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
           <p>
             탭해서 고르거나, 누른 채로 끌어서 여러 장을 골라요. 컴퓨터에서는 Shift를 누르고 클릭하면 사이가 모두 골라져요.
           </p>
-          {/* 별점별로 한 번에 선택에 더하기 */}
-          <div className="flex flex-wrap gap-1.5">
-            {[0, 1, 2, 3, 4, 5].map((rating) => {
-              const count = photos.filter((p) => p.rating === rating).length;
-              return (
-                <button
-                  key={rating}
-                  type="button"
-                  onClick={() => addRating(rating)}
-                  disabled={count === 0}
-                  className={`${ui.pill} tabular-nums`}
-                >
-                  {rating === 0 ? "안 고름" : `★${rating}`} {count}장 선택
-                </button>
-              );
-            })}
-          </div>
+          {/* 별점별로 한 번에 선택에 더하기 (점수 하나만 골라 볼 때는 전체 선택과 같아서 숨김) */}
+          {ratingButtons.length > 1 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ratingButtons.map((rating) => {
+                const count = photos.filter((p) => p.rating === rating).length;
+                return (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => addRating(rating)}
+                    disabled={count === 0}
+                    className={`${ui.pill} tabular-nums`}
+                  >
+                    {rating === 0 ? "안 고름" : `★${rating}`} {count}장 선택
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -225,7 +237,7 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
                 onPointerUp={() => onPointerUp(i)}
                 // 선택 중: 손가락·마우스는 위에서 처리하고, 키보드(Enter·Space)로 누를 때만 여기서
                 // 선택 중이 아니면: 크게 보기
-                onClick={(e) => (selecting ? e.detail === 0 && toggle(i) : setViewing(i))}
+                onClick={(e) => (selecting ? e.detail === 0 && toggle(i) : setViewingId(photo.id))}
                 className={`relative block ${selecting ? "cursor-pointer" : "cursor-default"}`}
                 aria-pressed={selecting ? isSelected : undefined}
                 aria-label={photo.filename}
@@ -262,13 +274,13 @@ export function PhotoManager({ albumId, photos: allPhotos }: { albumId: string; 
         })}
       </ul>
 
-      {viewing !== null && (
+      {viewing >= 0 && (
         <PhotoPreview
           photos={photos}
           index={viewing}
           number={filter === "all" ? null : (numbers.get(photos[viewing].id) ?? null)}
-          onChange={setViewing}
-          onClose={() => setViewing(null)}
+          onChange={(i) => setViewingId(photos[i].id)}
+          onClose={() => setViewingId(null)}
         />
       )}
     </div>
