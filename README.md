@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# epilego (에필레고)
 
-## Getting Started
+스냅 작가가 사진을 올리고 링크를 보내면, 모델이 휴대폰에서 사진마다 별점을 매기고, 그 결과를 작가가 어도비 브릿지의 원본에 바로 적용하는 셀렉 서비스입니다.
 
-First, run the development server:
+- 배포 주소: https://epilego.vercel.app
+- 이름: 에필레고(epilégo)는 그리스어로 '고른다'는 뜻입니다.
+
+## 1. 목적과 사용자
+
+저는 한강과 웨딩 스냅을 찍습니다. 촬영이 끝나면 1차로 고르고 남은 사진을 카카오톡으로 30장씩 끊어서 보냈고, 모델은 마음에 드는 사진을 저장해서 다시 저에게 보냈습니다. 저는 그 사진을 원본과 하나씩 맞춰야 했습니다. 에필레고는 이 과정을 링크 하나로 줄입니다.
+
+| 사용자 | 하는 일 | 로그인 |
+| --- | --- | --- |
+| 작가 (1명) | 앨범을 만들고 사진을 올린 뒤 링크를 보냄, 결과 확인 | 필요 |
+| 모델 | 카톡으로 받은 링크를 열고 별점을 매긴 뒤 "다 골랐어요" | 없음 |
+
+## 2. 사용 방법
+
+### 서비스로 쓰기
+
+1. 작가는 브릿지에서 눈 감은 컷처럼 쓸 수 없는 사진만 먼저 걸러냅니다.
+2. 앨범을 만들 때 5점을 줄 수 있는 최대 장수를 정하고(기본 10장), 사진을 끌어다 놓아 올립니다. 사진은 브라우저에서 긴 변 2000px로 줄어들어 올라가고, 촬영 시간순으로 정렬됩니다.
+3. 공유 링크를 복사해 모델에게 보냅니다.
+4. 모델은 로그인 없이 링크를 열고, 별을 누르거나 밀어서 1–5점을 매깁니다. 고르지 않은 사진은 0점입니다. 비슷한 컷은 비교 버튼으로 위아래에 고정해 비교할 수 있습니다. 별점은 누르는 즉시 저장됩니다.
+5. 모델이 "다 골랐어요"를 누르면 별점이 잠기고, 작가 화면에 별점 높은 순으로 결과가 나옵니다.
+6. 작가는 결과 파일을 내려받아 브릿지 스크립트(`public/bridge/epilego-apply-ratings.jsx`)로 원본에 별점을 적용합니다. 파일명이 같으면 RAW와 JPEG 모두에 들어갑니다.
+
+### 로컬에서 실행하기
 
 ```bash
+npm install
+cp .env.example .env.local   # Supabase URL과 publishable 키를 넣는다
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Supabase 프로젝트에 `supabase/migrations`의 SQL을 순서대로 적용하고, 작가 계정은 Supabase 대시보드에서 하나 만듭니다(회원가입은 막아 둠).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+기술 스택: Next.js, Tailwind CSS, Supabase(데이터베이스, 저장소, 로그인), Vercel(배포), Pretendard 폰트.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 3. 작업 과정
 
-## Learn More
+| 날짜 | 한 일 |
+| --- | --- |
+| 10/18 | 문제와 범위를 정하고 CLAUDE.md 작성, 스택 결정, 업로드부터 별점, 완료, 결과, 브릿지 적용까지 핵심 기능 |
+| 10/18 | 다른 에이전트(코덱스)로 교차 리뷰, 별점 저장 신뢰성 보강 |
+| 10/19 | 별점 골라 보기, 셀렉을 마친 뒤 화면, 앨범 지우기 |
+| 10/20 | Vercel 배포, 서비스 이름 확정 |
+| 10/22–10/27 | 작가 화면 크게 보기, 별점 골라 보기, 버그 수정 |
 
-To learn more about Next.js, take a look at the following resources:
+코딩 경험이 거의 없어서, 규칙과 범위를 CLAUDE.md에 적어두고 Claude Code와 작업했습니다. 큰 결정은 Claude Code가 선택지를 2–3개 보여주면 제가 고르고, 이유와 비교한 안을 CLAUDE.md의 결정 기록에 남겼습니다(57개). 주요 결정은 이렇습니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 하트 대신 별점 1–5점, 안 고른 사진은 0점: 모델의 선호 정도까지 알 수 있고, 마음에 드는 사진만 누르면 돼서 100장이 넘어도 빨리 끝납니다.
+- 5점만 장수 제한: 보정 상품 장수에 맞추기 위해서입니다.
+- 모델은 표에 직접 접근하지 못하고 공유 코드로 여는 함수 3개로만 별점을 저장: 5점 한도와 완료 후 잠금을 데이터베이스가 직접 지킵니다.
+- 결과를 브릿지 원본에 바로 적용: 목록을 보고 원본을 다시 찾는 일을 없앴습니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 4. Claude Code 증거와 검증
 
-## Deploy on Vercel
+| # | 증거 | 파일 |
+| --- | --- | --- |
+| 1 | 첫 요청과 흐름 설계, 빈 부분을 묻는 질문 | [evidence-1.png](docs/evidence-1.png) |
+| 2 | CLAUDE.md 결정 기록 | [evidence-2.png](docs/evidence-2.png) |
+| 3 | Supabase MCP로 SQL 적용과 보안 점검 | [evidence-3.png](docs/evidence-3.png) |
+| 4 | 코덱스 리뷰에서 찾은 저장 순서 문제와 수정 커밋 | [evidence-4.png](docs/evidence-4.png) |
+| 5 | 모델이 휴대폰에서 보는 셀렉 화면(341장 앨범, 격자 보기와 별점 골라 보기) | [evidence-5.png](docs/evidence-5.png) |
+| 6 | 브릿지에 모델 별점이 적용된 화면(★5 10장, ★4 13장) | [evidence-6.png](docs/evidence-6.png) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+배포 주소에서 직접 확인한 결과입니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| 케이스 | 기대 결과 | 결과 |
+| --- | --- | --- |
+| 사진 130장 업로드 (2.5GB) | 촬영 시간순으로 130장이 보임 | 약 1분 만에 올라가고 촬영 시간순으로 정렬됨 |
+| 카톡으로 받은 링크를 휴대폰에서 열기 | 로그인 없이 카톡 브라우저에서 열림 | 통과 |
+| 별점을 매기고 "다 골랐어요" | 작가 화면에 별점순 결과, 파일명 일치 | 통과. 결과 파일을 브릿지에 적용하니 원본에 ★5 10장, ★4 13장, ★3 1장이 들어감 |
+| 실제 모델(을지로 촬영 친구)이 설명 없이 사용 | 혼자 완료까지 진행 | 링크만 받고 끝까지 마침. 인터뷰에서 어려웠던 점은 "딱히 없다". 걸린 시간은 재지 못함 |
+| 엣지: 한도를 넘는 5점 | 막히고 안내가 나옴 | 통과. "5점은 최대 N장까지예요" 안내, 별점은 그대로 |
+| 엣지: 링크 주소 한 글자 변경 | 다른 앨범이 아니라 '없는 앨범' | 통과 |
+| 한계: RAW 파일(.RAF 등) 업로드 | 건너뛰고 안내 | 사진 고르기 창에서는 JPEG만 보이고, 끌어다 놓으면 "JPEG가 아니라 건너뜀"으로 안내 |
+
+## 5. 잘 통한 방법과 어려웠던 점
+
+잘 통한 방법
+
+1. CLAUDE.md에 규칙과 결정을 적어 두니, 대화가 바뀌어도 같은 규칙으로 일했고 같은 설명을 반복하지 않았습니다.
+2. 다 만든 뒤 코덱스에게 교차 리뷰를 맡겼습니다. 카톡 창을 닫을 때 보낸 옛 저장 요청이 최신 별점을 덮어쓸 수 있다는 문제를 찾았고, 누른 시각보다 오래된 저장은 무시하도록 고쳤습니다.
+3. Supabase를 MCP로 연결해서 Claude Code가 SQL을 직접 적용하고 보안을 점검했습니다. 복사해서 붙여넣다 생기는 실수가 줄었습니다.
+
+어려웠던 점
+
+1. 범위가 계속 커졌습니다. 컴퓨터용 모델 화면을 만들었다가 '나중에'로 미뤘고, 배포 뒤에도 작가 화면 기능을 계속 더했습니다.
+2. 카톡 안의 브라우저는 쉽게 닫혀서 별점이 빠졌습니다. 누르는 즉시 저장하고, 실패한 별점은 기기에 보관했다가 다시 보내게 바꿨습니다.
+3. 코드를 읽지 못해 결과가 맞는지 판단하기 어려웠습니다. 교차 리뷰와 직접 눌러보는 검증 목록으로 보완했습니다.
+
+## 6. 알려진 한계
+
+- 모델이 사진별로 보정 요청 메모를 남기는 기능은 다음 단계로 미뤘습니다.
+- JPEG만 올릴 수 있습니다. RAW나 HEIC 같은 다른 형식은 건너뛰므로, RAW로 찍는 작가는 RAW+JPEG로 촬영하거나 JPEG로 내보내야 합니다.
+- 작가 한 명만 쓸 수 있습니다(회원가입 없음).
+- 사진은 추측하기 어려운 주소로 공개 저장소에 저장됩니다. 주소를 아는 사람은 사진을 볼 수 있습니다.
+- 실제 모델 테스트는 한 명만 했습니다.
+
+## 7. 핵심 소스 파일
+
+| 파일 | 역할 |
+| --- | --- |
+| `supabase/migrations/20261018110815_init.sql` | 앨범과 사진 표, 보안 규칙, 모델용 함수 3개 |
+| `app/a/[token]/use-ratings.ts` | 별점 즉시 저장, 오래된 요청 무시, 실패 재시도, 5점 한도 |
+| `app/a/[token]/select-app.tsx` | 모델 화면(격자, 필름스트립, 비교, 완료) |
+| `app/admin/albums/[id]/upload-photos.tsx` | 사진 줄이기, 촬영 시간 읽기, 업로드 |
+| `public/bridge/epilego-apply-ratings.jsx` | 브릿지 원본에 별점 적용 |
